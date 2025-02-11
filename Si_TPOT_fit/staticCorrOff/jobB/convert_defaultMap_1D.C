@@ -38,21 +38,13 @@ void convert_defaultMap_1D()
   cout<<"Z-axis nbins "<<nbins_z<<" min "<<xmin_z<<" max "<<xmax_z<<endl;
 
   bool read_scaler_from_hist = true;
-  TH1* h_phi;
-  TH1* h_z;
-  TH1* h_r;
-  TH1* h_layer;
-  TH2* h_phi_z;
-  TH2* h_phi_r;
-  TH2* h_phi_layer;
-  TH2* h_r_z;
-  TH2* h_layer_z;
-  TH3* h_phi_r_z;
-  TH3* h_phi_layer_z;
+  TH1 *h_phi, *h_z, *h_r, *h_layer;
+  TH2 *h_phi_z, *h_phi_r, *h_phi_layer, *h_r_z, *h_layer_z;
+  TH3 *h_phi_r_z, *h_phi_layer_z;
 
   if (read_scaler_from_hist)
   {
-    TFile* file_scale = new TFile("scale.root","");
+    TFile* file_scale = new TFile("scale_for_1D.root","");
     h_phi = (TH1*) file_scale->Get("h_phi");
     h_z = (TH1*) file_scale->Get("h_z");
     h_r = (TH1*) file_scale->Get("h_r");
@@ -81,17 +73,20 @@ void convert_defaultMap_1D()
     h_phi_r_z = new TH3F("h_phi_r_z", "Run 53877, clusters on track;#phi (rad);R (cm);Z (cm);Counts", nbins_phi, xmin_phi, xmax_phi, nbins_r, xmin_r, xmax_r, nbins_z, xmin_z, xmax_z);
     h_phi_layer_z = new TH3F("h_phi_layer_z", "Run 53877, clusters on track;#phi (rad);Layer;Z (cm);Counts", nbins_phi, xmin_phi, xmax_phi, nbins_layer, xmin_layer, xmax_layer, nbins_z, xmin_z, xmax_z);
 
-    tree_scale->Draw("clusgz>>h_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("fabs(clusgr)>>h_r","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("cluslayer>>h_layer","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("clusgz:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("fabs(clusgr):(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_r","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("cluslayer:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_layer","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("clusgz:fabs(clusgr)>>h_r_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("clusgz:cluslayer>>h_layer_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("clusgz:fabs(clusgr):(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_r_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
-    tree_scale->Draw("clusgz:cluslayer:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_layer_z","cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2");
+    //near CM
+    TCut cut = "crossing==0 && cluslayer>=7 && cluslayer<55 && m_pt>0.2 && m_nmaps>=2 && m_nintt>=2 && fabs(pcaz)<10 && fabs(eta)<0.25";
+
+    tree_scale->Draw("clusgz>>h_z",cut);
+    tree_scale->Draw("(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi",cut);
+    tree_scale->Draw("fabs(clusgr)>>h_r",cut);
+    tree_scale->Draw("cluslayer>>h_layer",cut);
+    tree_scale->Draw("clusgz:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_z",cut);
+    tree_scale->Draw("fabs(clusgr):(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_r",cut);
+    tree_scale->Draw("cluslayer:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_layer",cut);
+    tree_scale->Draw("clusgz:fabs(clusgr)>>h_r_z",cut);
+    tree_scale->Draw("clusgz:cluslayer>>h_layer_z",cut);
+    tree_scale->Draw("clusgz:fabs(clusgr):(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_r_z",cut);
+    tree_scale->Draw("clusgz:cluslayer:(atan2(clusgy,clusgx) < 0 ? atan2(clusgy,clusgx)+2*TMath::Pi() : atan2(clusgy,clusgx))>>h_phi_layer_z",cut);
 
     h_z->Scale(1./h_z->Integral());
     h_phi->Scale(1./h_phi->Integral());
@@ -105,7 +100,7 @@ void convert_defaultMap_1D()
     h_phi_r_z->Scale(1./h_phi_r_z->Integral());
     h_phi_layer_z->Scale(1./h_phi_layer_z->Integral());
 
-    TFile* ofile_scale = new TFile("scale.root","recreate");
+    TFile* ofile_scale = new TFile("scale_for_1D.root","recreate");
     ofile_scale->cd();
     h_phi->Write();
     h_z->Write();
@@ -153,15 +148,15 @@ void convert_defaultMap_1D()
   TH1* h_rdphi_layer_neg = new TH1F("h_rdphi_layer_neg","Negative Z Simulation Distortion Map rdphi vs layer;layer;rdphi (cm)",nbins_layer,xmin_layer,xmax_layer);
   TH1* h_dz_layer_neg = new TH1F("h_dz_layer_neg","Negative Z Simulation Distortion Map dz vs layer;layer;dz (cm)",nbins_layer,xmin_layer,xmax_layer);
 
-  TH1* h_dr_r_pos = new TH1F("h_dr_r_pos","Positive Z Simulation Distortion Map dr vs r;r (cm);dR (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_dphi_r_pos = new TH1F("h_dphi_r_pos","Positive Z Simulation Distortion Map dphi vs r;r;dphi (rad)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_rdphi_r_pos = new TH1F("h_rdphi_r_pos","Positive Z Simulation Distortion Map rdphi vs r;r (cm);rdphi (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_dz_r_pos = new TH1F("h_dz_r_pos","Positive Z Simulation Distortion Map dz vs r;r (cm);dz (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
+  TH1* h_dr_r_pos = new TH1F("h_dr_r_pos","Positive Z Simulation Distortion Map dr vs r;r (cm);dR (cm)",nbins_r,xmin_r,xmax_r);
+  TH1* h_dphi_r_pos = new TH1F("h_dphi_r_pos","Positive Z Simulation Distortion Map dphi vs r;r;dphi (rad)",nbins_r,xmin_r,xmax_r);
+  TH1* h_rdphi_r_pos = new TH1F("h_rdphi_r_pos","Positive Z Simulation Distortion Map rdphi vs r;r (cm);rdphi (cm)",nbins_r,xmin_r,xmax_r);
+  TH1* h_dz_r_pos = new TH1F("h_dz_r_pos","Positive Z Simulation Distortion Map dz vs r;r (cm);dz (cm)",nbins_r,xmin_r,xmax_r);
 
-  TH1* h_dr_r_neg = new TH1F("h_dr_r_neg","Negative Z Simulation Distortion Map dr vs r;r (cm);dR (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_dphi_r_neg = new TH1F("h_dphi_r_neg","Negative Z Simulation Distortion Map dphi vs r;r (cm);dphi (rad)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_rdphi_r_neg = new TH1F("h_rdphi_r_neg","Negative Z Simulation Distortion Map rdphi vs r;r (cm);rdphi (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
-  TH1* h_dz_r_neg = new TH1F("h_dz_r_neg","Negative Z Simulation Distortion Map dz vs r;r (cm);dz (cm)",nbins_r,TpcRadiusMap[7],TpcRadiusMap[54]);
+  TH1* h_dr_r_neg = new TH1F("h_dr_r_neg","Negative Z Simulation Distortion Map dr vs r;r (cm);dR (cm)",nbins_r,xmin_r,xmax_r);
+  TH1* h_dphi_r_neg = new TH1F("h_dphi_r_neg","Negative Z Simulation Distortion Map dphi vs r;r (cm);dphi (rad)",nbins_r,xmin_r,xmax_r);
+  TH1* h_rdphi_r_neg = new TH1F("h_rdphi_r_neg","Negative Z Simulation Distortion Map rdphi vs r;r (cm);rdphi (cm)",nbins_r,xmin_r,xmax_r);
+  TH1* h_dz_r_neg = new TH1F("h_dz_r_neg","Negative Z Simulation Distortion Map dz vs r;r (cm);dz (cm)",nbins_r,xmin_r,xmax_r);
 
   for (int i = 0; i < nbins_layer; i++)
   {
@@ -253,7 +248,6 @@ void convert_defaultMap_1D()
   h_dz_r_neg->Write();
 
   ofile_map->Close();
-
 }
 
 float get_resid_r(float r, TH3* h, TH3* scaler_phi_r_z)

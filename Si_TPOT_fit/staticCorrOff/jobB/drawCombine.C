@@ -15,14 +15,14 @@ int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
 int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
 
 TFile* file_1D_map_sim = new TFile("default_map.root","");
-TH1* h_R_pos_sim = (TH1*) file_1D_map_sim->Get("h_dr_layer_pos");
-TH1* h_P_pos_sim = (TH1*) file_1D_map_sim->Get("h_dphi_layer_pos");
-TH1* h_Z_pos_sim = (TH1*) file_1D_map_sim->Get("h_dz_layer_pos");
-TH1* h_RP_pos_sim = (TH1*) file_1D_map_sim->Get("h_rdphi_layer_pos");
-TH1* h_R_neg_sim = (TH1*) file_1D_map_sim->Get("h_dr_layer_neg");
-TH1* h_P_neg_sim = (TH1*) file_1D_map_sim->Get("h_dphi_layer_neg");
-TH1* h_Z_neg_sim = (TH1*) file_1D_map_sim->Get("h_dz_layer_neg");
-TH1* h_RP_neg_sim = (TH1*) file_1D_map_sim->Get("h_rdphi_layer_neg");
+TH1* h_R_pos_sim = (TH1*) file_1D_map_sim->Get("h_dr_r_pos");
+TH1* h_P_pos_sim = (TH1*) file_1D_map_sim->Get("h_dphi_r_pos");
+TH1* h_Z_pos_sim = (TH1*) file_1D_map_sim->Get("h_dz_r_pos");
+TH1* h_RP_pos_sim = (TH1*) file_1D_map_sim->Get("h_rdphi_r_pos");
+TH1* h_R_neg_sim = (TH1*) file_1D_map_sim->Get("h_dr_r_neg");
+TH1* h_P_neg_sim = (TH1*) file_1D_map_sim->Get("h_dphi_r_neg");
+TH1* h_Z_neg_sim = (TH1*) file_1D_map_sim->Get("h_dz_r_neg");
+TH1* h_RP_neg_sim = (TH1*) file_1D_map_sim->Get("h_rdphi_r_neg");
 
 h_R_pos_sim->SetLineColor(kBlack);
 h_P_pos_sim->SetLineColor(kBlack);
@@ -34,23 +34,22 @@ h_Z_neg_sim->SetLineColor(kBlack);
 h_RP_neg_sim->SetLineColor(kBlack);
 
 h_R_pos_sim->SetMinimum(-0.5); h_R_pos_sim->SetMaximum(2.5);
-h_P_pos_sim->SetMinimum(-0.02); h_P_pos_sim->SetMaximum(0.03);
-//h_Z_pos_sim->SetMinimum(-0.2); h_Z_pos_sim->SetMaximum(1.5);
-h_Z_pos_sim->SetMinimum(-20); h_Z_pos_sim->SetMaximum(20);
+h_P_pos_sim->SetMinimum(-0.02); h_P_pos_sim->SetMaximum(0.02);
+h_Z_pos_sim->SetMinimum(-0.2); h_Z_pos_sim->SetMaximum(2);
 h_RP_pos_sim->SetMinimum(-1); h_RP_pos_sim->SetMaximum(1);
-h_R_pos_sim->SetTitle("dR vs layer Positive Z");
-h_P_pos_sim->SetTitle("dphi vs layer Positive Z");
-h_Z_pos_sim->SetTitle("dz vs layer Positive Z");
-h_RP_pos_sim->SetTitle("rdphi vs layer Positive Z");
+h_R_pos_sim->SetTitle("dR vs R Positive Z");
+h_P_pos_sim->SetTitle("dphi vs R Positive Z");
+h_Z_pos_sim->SetTitle("dz vs R Positive Z");
+h_RP_pos_sim->SetTitle("Rdphi vs R Positive Z");
 
 h_R_neg_sim->SetMinimum(-0.5); h_R_neg_sim->SetMaximum(2.5);
-h_P_neg_sim->SetMinimum(-0.02); h_P_neg_sim->SetMaximum(0.03);
-h_Z_neg_sim->SetMinimum(-0.2); h_Z_neg_sim->SetMaximum(1.5);
+h_P_neg_sim->SetMinimum(-0.02); h_P_neg_sim->SetMaximum(0.02);
+h_Z_neg_sim->SetMinimum(-0.2); h_Z_neg_sim->SetMaximum(2);
 h_RP_neg_sim->SetMinimum(-1); h_RP_neg_sim->SetMaximum(1);
-h_R_neg_sim->SetTitle("dR vs layer Negative Z");
-h_P_neg_sim->SetTitle("dphi vs layer Negative Z");
-h_Z_neg_sim->SetTitle("dz vs layer Negative Z");
-h_RP_neg_sim->SetTitle("rdphi vs layer Negative Z");
+h_R_neg_sim->SetTitle("dR vs R Negative Z");
+h_P_neg_sim->SetTitle("dphi vs R Negative Z");
+h_Z_neg_sim->SetTitle("dz vs  Negative Z");
+h_RP_neg_sim->SetTitle("rdphi vs R Negative Z");
 
 TFile* file_1D_map[7];
 TH1* h_N_pos[7];
@@ -63,9 +62,9 @@ TH1* h_R_neg[7];
 TH1* h_P_neg[7];
 TH1* h_Z_neg[7];
 TH1* h_RP_neg[7];
-for (int i = 0; i < 7; i++)
+for (int i = 0; i < 6; i++)
 {
-  file_1D_map[i] = new TFile(Form("Rootfiles/Distortions_1D_mm_%d.root",runs[i]),"");
+  file_1D_map[i] = new TFile(Form("Rootfiles/Distortions_1D_mm_%d_radius.root",runs[i]),"");
   h_R_pos[i] = (TH1*) file_1D_map[i]->Get("hIntDistortionR_posz");
   h_P_pos[i] = (TH1*) file_1D_map[i]->Get("hIntDistortionP_posz");
   h_Z_pos[i] = (TH1*) file_1D_map[i]->Get("hIntDistortionZ_posz");
@@ -89,26 +88,26 @@ for (int i = 0; i < 7; i++)
 TCanvas* can = new TCanvas("can","",3200,1200);
 can->Divide(4,2);
 can->cd(1);
-h_P_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_P_pos[i]->Draw("hist,same");
+h_P_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_P_pos[i]->Draw("hist,e,same"); h_P_pos_sim->Draw("hist,same");
 can->cd(2);
-h_RP_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_RP_pos[i]->Draw("hist,same");
+h_RP_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_RP_pos[i]->Draw("hist,e,same"); h_RP_pos_sim->Draw("hist,same");
 can->cd(3);
-h_R_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_R_pos[i]->Draw("hist,same");
+h_R_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_R_pos[i]->Draw("hist,e,same"); h_R_pos_sim->Draw("hist,same");
 can->cd(4);
-h_Z_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_Z_pos[i]->Draw("hist,same");
+h_Z_pos_sim->Draw("hist"); for (int i=0; i<6; i++) h_Z_pos[i]->Draw("hist,e,same"); h_Z_pos_sim->Draw("hist,same");
 can->cd(5);
-h_P_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_P_neg[i]->Draw("hist,same");
+h_P_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_P_neg[i]->Draw("hist,e,same"); h_P_neg_sim->Draw("hist,same");
 can->cd(6);
-h_RP_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_RP_neg[i]->Draw("hist,same");
+h_RP_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_RP_neg[i]->Draw("hist,e,same"); h_RP_neg_sim->Draw("hist,same");
 can->cd(7);
-h_R_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_R_neg[i]->Draw("hist,same");
+h_R_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_R_neg[i]->Draw("hist,e,same"); h_R_neg_sim->Draw("hist,same");
 can->cd(8);
-h_Z_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_Z_neg[i]->Draw("hist,same");
+h_Z_neg_sim->Draw("hist"); for (int i=0; i<6; i++) h_Z_neg[i]->Draw("hist,e,same"); h_Z_neg_sim->Draw("hist,same");
 
 gPad->RedrawAxis();
 
 can->Update();
-can->SaveAs("figure/resid.pdf");
+can->SaveAs("figure/resid_radius.pdf");
 
 TLegend *legend = new TLegend(0.1, 0.1, 0.9, 0.9);
 legend->AddEntry(h_P_pos_sim, "Default simulation distortion map", "l");
@@ -116,5 +115,5 @@ for (int i=0; i<6; i++) legend->AddEntry(h_P_pos[i], Form("Run %d, MBD rate %d k
 legend->Draw();
 TCanvas* can_leg = new TCanvas("can_leg","",1600,1200);
 legend->Draw();
-can_leg->SaveAs("figure/resid_leg.pdf");
+can_leg->SaveAs("figure/resid_radius_leg.pdf");
 }
