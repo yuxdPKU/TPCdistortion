@@ -70,24 +70,24 @@ void TpcReadoutInit(const int RunNumber = 41989)
     G4TPC::tpc_drift_velocity_reco = cdbttree->GetSingleFloatValue("tpc_drift_velocity");
     std::cout << "Use calibrated TPC drift velocity for Run " << RunNumber << ": " << G4TPC::tpc_drift_velocity_reco << " cm/ns" << std::endl;
   }
-  float tpc_fee_clock_period_ratio = 53.326184/50.037280;//temporary fix before we re-calibrate drift velocity
-  if(RunNumber==53285) G4TPC::tpc_drift_velocity_reco = 0.006959*tpc_fee_clock_period_ratio;
-  if(RunNumber==53534) G4TPC::tpc_drift_velocity_reco = 0.007017*tpc_fee_clock_period_ratio;
-  if(RunNumber==53744) G4TPC::tpc_drift_velocity_reco = 0.007010*tpc_fee_clock_period_ratio;
-  if(RunNumber==53756) G4TPC::tpc_drift_velocity_reco = 0.007010*tpc_fee_clock_period_ratio;
-  if(RunNumber==53877) G4TPC::tpc_drift_velocity_reco = 0.007011*tpc_fee_clock_period_ratio;
-  if(RunNumber==53876) G4TPC::tpc_drift_velocity_reco = 0.007011*tpc_fee_clock_period_ratio;
-  if(RunNumber==53630) G4TPC::tpc_drift_velocity_reco = 0.00733*tpc_fee_clock_period_ratio;//no updated
+  // based on Bade's result https://indico.bnl.gov/event/26219/contributions/103187/attachments/59925/102941/T0+drift%20update%20feb%2012th.pdf
+  if(RunNumber==53285) G4TPC::tpc_drift_velocity_reco = 0.0074014;
+  if(RunNumber==53534) G4TPC::tpc_drift_velocity_reco = 0.0074072;
+  if(RunNumber==53630) G4TPC::tpc_drift_velocity_reco = 0.0073638;
+  if(RunNumber==53744) G4TPC::tpc_drift_velocity_reco = 0.0074026;
+  if(RunNumber==53756) G4TPC::tpc_drift_velocity_reco = 0.0073844;
+  if(RunNumber==53876) G4TPC::tpc_drift_velocity_reco = 0.0073879;
+  if(RunNumber==53877) G4TPC::tpc_drift_velocity_reco = 0.0074153;
   std::cout << "Use RE-calibrated TPC drift velocity for Run " << RunNumber << ": " << G4TPC::tpc_drift_velocity_reco << " cm/ns" << std::endl;
   TpcClusterZCrossingCorrection::_vdrift = G4TPC::tpc_drift_velocity_reco;
 
-  if(RunNumber==53285) TRACKING::reco_t0=-5;
-  if(RunNumber==53534) TRACKING::reco_t0=-4;
-  if(RunNumber==53744) TRACKING::reco_t0=-4;
-  if(RunNumber==53756) TRACKING::reco_t0=-4;
+  if(RunNumber==53285) TRACKING::reco_t0=-4;
+  if(RunNumber==53534) TRACKING::reco_t0=-5;
+  if(RunNumber==53630) TRACKING::reco_t0=-5;
+  if(RunNumber==53744) TRACKING::reco_t0=-5;
+  if(RunNumber==53756) TRACKING::reco_t0=-5;
+  if(RunNumber==53876) TRACKING::reco_t0=-5;
   if(RunNumber==53877) TRACKING::reco_t0=-4;
-  if(RunNumber==53876) TRACKING::reco_t0=-4;
-  if(RunNumber==53630) TRACKING::reco_t0=+2;//no updated
   std::cout << "Use t0 for Run " << RunNumber << ": " << TRACKING::reco_t0 << std::endl;
 }
 

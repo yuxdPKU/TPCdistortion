@@ -198,7 +198,7 @@ void TpcSpaceChargeMatrixInversion1D::calculate_distortion_corrections()
     const auto icell = m_matrix_container_layer_negz->get_cell_index(ilayer);
 
     // minimum number of entries per bin
-    static constexpr int min_cluster_count = 2;
+    static constexpr int min_cluster_count = 10;
     const auto cell_entries = m_matrix_container_layer_negz->get_entries(icell);
     if (cell_entries < min_cluster_count)
     {

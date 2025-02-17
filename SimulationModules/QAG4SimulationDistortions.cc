@@ -403,8 +403,7 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
 bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
 {
 
-  //if (track->get_pt() < 0.5)
-  if (track->get_pt() < 0.2)
+  if (track->get_pt() < 0.5)
   {
     return false;
   }

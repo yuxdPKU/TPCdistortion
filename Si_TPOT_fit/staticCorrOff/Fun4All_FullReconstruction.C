@@ -5,7 +5,6 @@
  * hits, clusters, and clusters on tracks into trees for analysis.
  */
 
-#include <fun4all/Fun4AllUtils.h>
 #include <G4_ActsGeom.C>
 #include <G4_Global.C>
 #include <G4_Magnet.C>
@@ -20,7 +19,9 @@
 #include <Trkr_TpcReadoutInit.C>
 
 #include <ffamodules/CDBInterface.h>
+#include <ffamodules/FlagHandler.h>
 
+#include <fun4all/Fun4AllUtils.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
@@ -62,30 +63,23 @@ R__LOAD_LIBRARY(libtrackingqa.so)
 R__LOAD_LIBRARY(libtpcqa.so)
 void Fun4All_FullReconstruction(
     const int nEvents = 10,
-    const std::string tpcfilename = "DST_STREAMING_EVENT_run2pp_new_2024p002-00053222-00000.root",
-    const std::string tpcdir = "/sphenix/lustre01/sphnxpro/physics/slurp/streaming/physics/new_2024p002/run_00053200_00053300/",
+    const int runnumber = 53744,
+    const int segment = 0,
+    const std::string filelist = "filelist",
     const std::string outdir = "root/",
     const std::string outfilename = "clusters_seeds",
     const int index = 0,
     const int stepsize = 10,
     const bool convertSeeds = false)
 {
-  std::string inputtpcRawHitFile = tpcdir + tpcfilename;
-
   G4TRACKING::convert_seeds_to_svtxtracks = convertSeeds;
   std::cout << "Converting to seeds : " << G4TRACKING::convert_seeds_to_svtxtracks << std::endl;
-  std::pair<int, int>
-      runseg = Fun4AllUtils::GetRunSegment(tpcfilename);
-  int runnumber = runseg.first;
-  int segment = runseg.second;
 
   std::cout<< " run: " << runnumber
 	   << " samples: " << TRACKING::reco_tpc_maxtime_sample
 	   << " pre: " << TRACKING::reco_tpc_time_presample
 	   << " vdrift: " << G4TPC::tpc_drift_velocity_reco
 	   << std::endl;
-
-  TRACKING::pp_mode = true;
 
   // distortion calibration mode
   /*
@@ -94,6 +88,7 @@ void Fun4All_FullReconstruction(
    */
   G4TRACKING::SC_CALIBMODE = true;
   G4TRACKING::SC_USE_MICROMEGAS = true;
+  TRACKING::pp_mode = true;
 
   ACTSGEOM::mvtxMisalignment = 100;
   ACTSGEOM::inttMisalignment = 100.;
@@ -109,14 +104,48 @@ void Fun4All_FullReconstruction(
   auto se = Fun4AllServer::instance();
   se->Verbosity(2);
   auto rc = recoConsts::instance();
-  rc->set_IntFlag("RUNNUMBER", runnumber);
-  rc->set_IntFlag("RUNSEGMENT", segment);
+  
+  //input manager for QM production raw hit DST file
+  std::ifstream ifs(filelist);
+  std::string filepath;
+
+  int i = 0;
+  
+  while(std::getline(ifs,filepath))
+    {
+      std::cout << "Adding DST with filepath: " << filepath << std::endl; 
+     if(i==0)
+	{
+	   std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
+	   int runNumber = runseg.first;
+	   //int segment = runseg.second;
+	   rc->set_IntFlag("RUNNUMBER", runNumber);
+	   rc->set_uint64Flag("TIMESTAMP", runNumber);
+        
+	}
+      std::string inputname = "InputManager" + std::to_string(i);
+      auto hitsin = new Fun4AllDstInputManager(inputname);
+      hitsin->fileopen(filepath);
+      se->registerInputManager(hitsin);
+      i++;
+    }
+
+  //input manager for single DST file containing raw hit from all subsystems
+  /*
+  auto hitsin = new Fun4AllDstInputManager("InputManager");
+  hitsin->fileopen(inputtpcRawHitFile);
+  // hitsin->AddFile(inputMbd);
+  se->registerInputManager(hitsin);
+  */
 
   Enable::CDB = true;
+  CDBInterface::instance()->Verbosity(1);
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
-  rc->set_uint64Flag("TIMESTAMP", runnumber);
-  std::string geofile = CDBInterface::instance()->getUrl("Tracking_Geometry");
 
+  FlagHandler *flag = new FlagHandler();
+  se->registerSubsystem(flag);
+
+  std::string geofile = CDBInterface::instance()->getUrl("Tracking_Geometry");
   Fun4AllRunNodeInputManager *ingeo = new Fun4AllRunNodeInputManager("GeoIn");
   ingeo->AddFile(geofile);
   se->registerInputManager(ingeo);
@@ -126,7 +155,6 @@ void Fun4All_FullReconstruction(
   G4TPC::ENABLE_MODULE_EDGE_CORRECTIONS = true;
   //Flag for running the tpc hit unpacker with zero suppression on
   TRACKING::tpc_zero_supp = true;
-  TRACKING::tpc_baseline_corr = true;
 
   //to turn on the default static corrections, enable the two lines below
   //G4TPC::ENABLE_STATIC_CORRECTIONS = true;
@@ -141,14 +169,32 @@ void Fun4All_FullReconstruction(
   G4MAGNET::magfield_rescale = 1;
   TrackingInit();
 
-  auto hitsin = new Fun4AllDstInputManager("InputManager");
-  hitsin->fileopen(inputtpcRawHitFile);
-  // hitsin->AddFile(inputMbd);
-  se->registerInputManager(hitsin);
+  //hit unpacking for test QM production
+  for(int felix=0; felix < 6; felix++)
+    {
+      Mvtx_HitUnpacking(std::to_string(felix));
+    }
+  for(int server = 0; server < 8; server++)
+    {
+      Intt_HitUnpacking(std::to_string(server));
+    }
+  ostringstream ebdcname;
+  for(int ebdc = 0; ebdc < 24; ebdc++)
+    {
+      ebdcname.str("");
+      if(ebdc < 10)
+	{
+	  ebdcname<<"0";
+	}
+      ebdcname<<ebdc;
+      Tpc_HitUnpacking(ebdcname.str());
+    }
 
-  Mvtx_HitUnpacking();
-  Intt_HitUnpacking();
-  Tpc_HitUnpacking();
+  //hit unpacking for old production
+  //Mvtx_HitUnpacking();
+  //Intt_HitUnpacking();
+  //Tpc_HitUnpacking();
+
   Micromegas_HitUnpacking();
 
   //temporary fix for removing MvtxHitPruner
@@ -157,7 +203,7 @@ void Fun4All_FullReconstruction(
   int verbosity = std::max(Enable::VERBOSITY, Enable::MVTX_VERBOSITY);
   mvtxclusterizer->Verbosity(verbosity);
   se->registerSubsystem(mvtxclusterizer);
-  
+
   Intt_Clustering();
 
   Tpc_LaserEventIdentifying();
@@ -227,6 +273,7 @@ void Fun4All_FullReconstruction(
   seeder->SetMinHitsPerCluster(0);
   seeder->SetMinClustersPerTrack(3);
   seeder->useFixedClusterError(true);
+  seeder->reject_zsize1_clusters(true);
   seeder->set_pp_mode(true);
   se->registerSubsystem(seeder);
 
@@ -270,6 +317,7 @@ void Fun4All_FullReconstruction(
   // Match TPC track stubs from CA seeder to clusters in the micromegas layers
   auto mm_match = new PHMicromegasTpcTrackMatching;
   mm_match->Verbosity(0);
+  mm_match->set_pp_mode(TRACKING::pp_mode);
   mm_match->set_rphi_search_window_lyr1(3.);
   mm_match->set_rphi_search_window_lyr2(15.0);
   mm_match->set_z_search_window_lyr1(30.0);
@@ -336,14 +384,14 @@ void Fun4All_FullReconstruction(
       residuals->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
 
       // matches Tony's analysis
-      residuals->setMinPt( 0.2 );
-      residuals->requireCrossing(true);
+      residuals->setMinPt( 0.5 );
+      residuals->requireCrossing(false);
       residuals->requireCM(true);
       residuals->setPCAzcut(10);
       residuals->setEtacut(0.25);
 
       residuals->setMaxTrackAlpha(0.6);
-      residuals->setMaxTrackBeta(1.5);
+      residuals->setMaxTrackBeta(0.8);
       residuals->setMaxTrackResidualDrphi(2);
       residuals->setMaxTrackResidualDz(5);
 
@@ -351,7 +399,7 @@ void Fun4All_FullReconstruction(
       residuals->setGridDimensions(48);
 
       // reconstructed distortion grid size (phi, r, z)
-      residuals->setGridDimensions(36, 48, 80);
+      residuals->setGridDimensions(36, 16, 80);
       se->registerSubsystem(residuals);
     }
 
@@ -370,6 +418,7 @@ void Fun4All_FullReconstruction(
   TString residoutfile = theOutfile + "_resid.root";
   std::string residstring(residoutfile.Data());
 
+  /*
   //auto resid = new TrackResiduals("TrackResiduals");
   auto resid = new DistortionAnalysis("DistortionAnalysis");
   resid->outfileName(residstring);
@@ -391,6 +440,24 @@ void Fun4All_FullReconstruction(
 
   resid->Verbosity(0);
   se->registerSubsystem(resid);
+  */
+
+  TString dstfile = theOutfile + "_dst.root";
+  std::string dststring(dstfile.Data());
+  /*
+  Fun4AllOutputManager *out = new Fun4AllDstOutputManager("out", dststring);
+  out->AddNode("Sync");
+  out->AddNode("EventHeader");
+  out->AddNode("TRKR_CLUSTER");
+  out->AddNode("TRKR_CLUSTERCROSSINGASSOC");
+  out->AddNode("LaserEventInfo");
+  out->AddNode("SiliconTrackSeedContainer");
+  out->AddNode("TpcTrackSeedContainer");
+  out->AddNode("SvtxTrackSeedContainer");
+  out->AddNode("SvtxTrackMap");
+  out->AddNode("SvtxVertexMap");
+  se->registerOutputManager(out);
+  */
 
   //auto ntuplizer = new TrkrNtuplizer("TrkrNtuplizer");
   //se->registerSubsystem(ntuplizer);
@@ -457,6 +524,17 @@ void Fun4All_FullReconstruction(
     string makeDirectoryMove = "mkdir -p " + outputDirMove;
     system(makeDirectoryMove.c_str());
     string moveOutput = "mv " + qaOutputFileName + " " + outputDirMove;
+    std::cout << "moveOutput: " << moveOutput << std::endl;
+    system(moveOutput.c_str());
+  }
+
+  ifstream file_dst(dststring.c_str(), ios::binary | ios::ate);
+  if (file_dst.good() && (file_dst.tellg() > 100))
+  {
+    string outputDstDirMove = outdir + "/Reconstructed/" + to_string(runnumber) + "/";
+    string makeDirectoryMove = "mkdir -p " + outputDstDirMove;
+    system(makeDirectoryMove.c_str());
+    string moveOutput = "mv " + dststring + " " + outputDstDirMove;
     std::cout << "moveOutput: " << moveOutput << std::endl;
     system(moveOutput.c_str());
   }

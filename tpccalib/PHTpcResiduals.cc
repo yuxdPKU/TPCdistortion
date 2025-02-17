@@ -292,7 +292,7 @@ bool PHTpcResiduals::checkTrackCM(SvtxTrack* track) const
     std::cout << "PHTpcResiduals::checkTrackCM - pcaz: " << track->get_z() << std::endl;
   }
 
-  if (m_requireCM && (fabs(track->get_z()) > 10 || fabs(track->get_eta()) > 0.25))
+  if (m_requireCM && (fabs(track->get_z()) > m_pcazcut || fabs(track->get_eta()) > m_etacut))
   {
     return false;
   }
