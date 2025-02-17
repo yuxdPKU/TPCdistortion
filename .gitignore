@@ -26,6 +26,14 @@ log
 *.out
 *.err
 
+#log file
+log*
+
+#plot
+figure
+figure_*
+*.pdf
+
 #root
 root
 inReconstruction
