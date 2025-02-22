@@ -8,6 +8,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 // forward declarations
 class TH1;
@@ -61,6 +62,15 @@ class TpcSpaceChargeReconstructionHelper
    */
   static void extrapolate_phi2(TH3* /*source*/, const TH3* /*mask*/);
 
+  /// expand 2D histogram to 3D
+  /**
+   * input 2D histogram is in R x Z plane
+   * expand it to 3D Phi x R x Z
+   * the original 2D histogram is put in the phi bin corresponding to the center of TPOT central sector
+   * other phi bins are set to zero
+   */
+  static TH3* expand(const TH2* /*source*/, const int /*pbins*/, const float /*pmin*/, const float /*pmax*/);
+
   /// separate positive and negative z histograms
   /**
    * split histograms in two, the first with negative z values only, the second with positive z values
@@ -80,6 +90,58 @@ class TpcSpaceChargeReconstructionHelper
   static TH3* add_guarding_bins(const TH3* /*source*/, const TString& /*name*/);
   static TH2* add_guarding_bins(const TH2* /*source*/, const TString& /*name*/);
   static TH1* add_guarding_bins(const TH1* /*source*/, const TString& /*name*/);
+
+  /// shortcut to angular window, needed to define TPOT acceptance
+  using range_t = std::pair<double, double>;
+
+  /// list of angular windows
+  using range_list_t = std::vector<range_t>;
+
+  //!@name define phi range for each TPOT sector
+  //@{
+  static void set_phi_range_central( const range_t& );
+  static void set_phi_range_east( const range_t& );
+  static void set_phi_range_west( const range_t& );
+  //@}
+
+  //!@name define theta range in each TPOT sector.
+  //@{
+  static void set_theta_range_central( const range_list_t& range_list )
+  { theta_range_central = range_list; }
+
+  static void set_theta_range_east( const range_list_t& range_list )
+  { theta_range_east = range_list; }
+
+  static void set_theta_range_west( const range_list_t& range_list )
+  { theta_range_west = range_list; }
+  //@}
+
+  static void Verbosity(const int value)
+  { verbosity = value; }
+  private:
+
+  ///@name detector geometry
+  //@{
+  /// phi range for central sector (TPC sectors 9 and 21)
+  static range_t phi_range_central;
+
+  /// phi range for east sector (TPC sectors 8 and 20)
+  static range_t phi_range_east;
+
+  /// phi range for west sector (TPC sectors 10 and 22)
+  static range_t phi_range_west;
+
+  /// list of theta angles for each micromeas in central sector with theta defined as atan2(z,r)
+  static range_list_t theta_range_central;
+
+  /// list of theta angles for each micromeas in central sector with theta defined as atan2(z,r)
+  static range_list_t theta_range_east;
+
+  /// list of theta angles for each micromeas in central sector with theta defined as atan2(z,r)
+  static range_list_t theta_range_west;
+  //@}
+
+  static int verbosity;
 };
 
 #endif

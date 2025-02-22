@@ -31,7 +31,7 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
   void identify(std::ostream& os = std::cout) const override;
 
   /// get grid dimensions
-  void get_grid_dimensions(int& rbins, int& zbins) const override;
+  void get_grid_dimensions(int& pbins, int& rbins, int& zbins) const override;
 
   /// get grid size
   int get_grid_size() const override;
@@ -61,7 +61,7 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
   \param rbins the number of bins along r
   \param zbins the number of bins along z
   */
-  void set_grid_dimensions(int rbins, int zbins) override;
+  void set_grid_dimensions(int pbins, int rbins, int zbins) override;
 
   /// increment cell entries
   void add_to_entries(int cell_index) override
@@ -98,7 +98,8 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
 
   ///@name grid size
   //@{
-  int m_rbins = 48;
+  int m_pbins = 36; // only for extrapolation
+  int m_rbins = 16;
   int m_zbins = 80;
   //@}
 

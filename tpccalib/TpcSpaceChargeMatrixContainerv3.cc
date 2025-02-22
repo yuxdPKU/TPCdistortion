@@ -19,13 +19,15 @@ TpcSpaceChargeMatrixContainerv3::TpcSpaceChargeMatrixContainerv3()
 void TpcSpaceChargeMatrixContainerv3::identify(std::ostream& out) const
 {
   out << "TpcSpaceChargeMatrixContainerv3" << std::endl;
+  out << "  pbins: " << m_pbins << std::endl;
   out << "  rbins: " << m_rbins << std::endl;
   out << "  zbins: " << m_zbins << std::endl;
 }
 
 //___________________________________________________________
-void TpcSpaceChargeMatrixContainerv3::get_grid_dimensions(int& rbins, int&  zbins) const
+void TpcSpaceChargeMatrixContainerv3::get_grid_dimensions(int& pbins, int& rbins, int&  zbins) const
 {
+  pbins = m_pbins;
   rbins = m_rbins;
   zbins = m_zbins;
 }
@@ -96,8 +98,9 @@ void TpcSpaceChargeMatrixContainerv3::Reset()
 }
 
 //___________________________________________________________
-void TpcSpaceChargeMatrixContainerv3::set_grid_dimensions(int rbins, int zbins)
+void TpcSpaceChargeMatrixContainerv3::set_grid_dimensions(int pbins, int rbins, int zbins)
 {
+  m_pbins = pbins;
   m_rbins = rbins;
   m_zbins = zbins;
   Reset();

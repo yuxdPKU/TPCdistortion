@@ -1,6 +1,7 @@
 #include <tpccalib/TpcSpaceChargeMatrixInversion.h>
 #include <tpccalib/TpcSpaceChargeMatrixInversion1D.h>
 #include <tpccalib/TpcSpaceChargeMatrixInversion2D.h>
+#include <tpccalib/TpcSpaceChargeReconstructionHelper.h>
 
 #include <cstdio>
 #include <sstream>
@@ -38,6 +39,15 @@ std::vector<std::string> list_files( const std::string& selection )
 //_______________________________________________
 void DistortionCorrectionMatrixInversion(int run=53285)
 {
+  TpcSpaceChargeReconstructionHelper::set_phi_range_central( {-1.72816,-1.42667} );
+  TpcSpaceChargeReconstructionHelper::set_phi_range_east( {-2.2573,-1.95558} );
+  TpcSpaceChargeReconstructionHelper::set_phi_range_west( {-1.20596,-0.901669} );
+
+  TpcSpaceChargeReconstructionHelper::set_theta_range_central( {{-0.784291,-0.608116}, {-0.566685,-0.0296837}, {0.0267087,0.565814}, {0.606447,0.915196}} );
+  TpcSpaceChargeReconstructionHelper::set_theta_range_east( {{-0.637541,-0.134304}, {0.135532,0.639481}} );
+  TpcSpaceChargeReconstructionHelper::set_theta_range_west( {{-0.641875,-0.138102}, {0.123857,0.633557}} );
+
+  TpcSpaceChargeReconstructionHelper::Verbosity( 2 );
 
   // input files
   /*
@@ -64,7 +74,7 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   //int run = 53876;
 
   //const TString inputFile = Form( "DST/CONDOR%s/TpcSpaceChargeMatrices%s_*.root", tag.Data(), tag.Data() );
-  const TString inputFile = Form( "../Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
+  const TString inputFile = Form( "/sphenix/u/xyu3/hftg01/DST_FOR_DISTORTION/Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
   //const TString inputFile = Form( "../clusters_seeds_%d-*.root_PhTpcResiduals.root", run );
 
   // Central membrane distortion corrections
@@ -90,6 +100,7 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   auto filenames = list_files( inputFile.Data() );
   std::cout << "SpaceChargeMatrixInversion - loaded " << filenames.size() << " files" << std::endl;
 
+  /*
   std::cout << "DistortionCorrectionMatrixInversion - 1D begin." << std::endl;
 
   // perform matrix inversion
@@ -107,12 +118,14 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   spaceChargeMatrixInversion1D.save_distortion_corrections( outputFile1D.Data() );
 
   std::cout << "DistortionCorrectionMatrixInversion - 1D done." << std::endl;
+  */
 
   std::cout << "DistortionCorrectionMatrixInversion - 2D begin." << std::endl;
 
   // perform matrix inversion
   TpcSpaceChargeMatrixInversion2D spaceChargeMatrixInversion2D;
-  spaceChargeMatrixInversion2D.Verbosity(1);
+  spaceChargeMatrixInversion2D.Verbosity(0);
+  spaceChargeMatrixInversion2D.set_min_cluster_count(20);
 
   // load input files
   for( const auto& file:filenames )
@@ -121,14 +134,20 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   // calculate the distortions in TPOT acceptance
   spaceChargeMatrixInversion2D.calculate_distortion_corrections();
 
+  // load central membrane corrections
+  //spaceChargeMatrixInversion.load_cm_distortion_corrections( inputfile_cm );
+  spaceChargeMatrixInversion.extrapolate_distortion_corrections();
+
   // write to output
   spaceChargeMatrixInversion2D.save_distortion_corrections( outputFile2D.Data() );
 
+  /*
   std::cout << "DistortionCorrectionMatrixInversion - 3D begin." << std::endl;
 
   // perform matrix inversion
   TpcSpaceChargeMatrixInversion spaceChargeMatrixInversion;
-  spaceChargeMatrixInversion.Verbosity(1);
+  spaceChargeMatrixInversion.Verbosity(0);
+  spaceChargeMatrixInversion.set_min_cluster_count(15);
 
   // load input files
   for( const auto& file:filenames )
@@ -138,11 +157,12 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   spaceChargeMatrixInversion.calculate_distortion_corrections();
 
   // load central membrane corrections
-  spaceChargeMatrixInversion.load_cm_distortion_corrections( inputfile_cm );
+  //spaceChargeMatrixInversion.load_cm_distortion_corrections( inputfile_cm );
   spaceChargeMatrixInversion.extrapolate_distortion_corrections();
 
   // write to output
   spaceChargeMatrixInversion.save_distortion_corrections( outputFile.Data() );
 
   std::cout << "DistortionCorrectionMatrixInversion - all done." << std::endl;
+  */
 }

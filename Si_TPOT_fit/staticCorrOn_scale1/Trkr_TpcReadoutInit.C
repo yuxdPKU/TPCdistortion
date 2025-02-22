@@ -81,6 +81,7 @@ void TpcReadoutInit(const int RunNumber = 41989)
   std::cout << "Use RE-calibrated TPC drift velocity for Run " << RunNumber << ": " << G4TPC::tpc_drift_velocity_reco << " cm/ns" << std::endl;
   TpcClusterZCrossingCorrection::_vdrift = G4TPC::tpc_drift_velocity_reco;
 
+  //only for tpc hit unpacker
   if(RunNumber==53285) TRACKING::reco_t0=-4;
   if(RunNumber==53534) TRACKING::reco_t0=-5;
   if(RunNumber==53630) TRACKING::reco_t0=-5;
@@ -88,7 +89,18 @@ void TpcReadoutInit(const int RunNumber = 41989)
   if(RunNumber==53756) TRACKING::reco_t0=-5;
   if(RunNumber==53876) TRACKING::reco_t0=-5;
   if(RunNumber==53877) TRACKING::reco_t0=-4;
-  std::cout << "Use t0 for Run " << RunNumber << ": " << TRACKING::reco_t0 << std::endl;
+  //std::cout << "Use t0 for Run " << RunNumber << ": " << TRACKING::reco_t0 << std::endl;
+
+  if(RunNumber==53285) G4TPC::tpc_tzero_reco=-4;
+  if(RunNumber==53534) G4TPC::tpc_tzero_reco=-5;
+  if(RunNumber==53630) G4TPC::tpc_tzero_reco=-5;
+  if(RunNumber==53744) G4TPC::tpc_tzero_reco=-5;
+  if(RunNumber==53756) G4TPC::tpc_tzero_reco=-5;
+  if(RunNumber==53876) G4TPC::tpc_tzero_reco=-5;
+  if(RunNumber==53877) G4TPC::tpc_tzero_reco=-4;
+  G4TPC::tpc_tzero_reco *= 50;
+  std::cout << "Use t0 reco (clustering stage) for Run " << RunNumber << ": " << G4TPC::tpc_tzero_reco << " ns" << std::endl;
+
 }
 
 

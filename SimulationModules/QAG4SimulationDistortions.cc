@@ -127,16 +127,19 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
   h = new TH2F(TString(get_histo_prefix()) + "deltaz_layer", ";layer; #Deltaz_{track-cluster} (cm)", 57, 0, 57, 100, -2, 2);
   hm->registerHisto(h);
 
-  h = new TH2F(TString(get_histo_prefix()) + "statez_pulls", "layer; #Deltaz_{track-cluster}/#sigma_{z}^{state}", 57, 0, 57, 100, -5, 5);
+  h = new TH2F(TString(get_histo_prefix()) + "statez_pulls", ";layer; #Deltaz_{track-cluster}/#sigma_{z}^{state}", 57, 0, 57, 100, -5, 5);
   hm->registerHisto(h);
 
-  h = new TH2F(TString(get_histo_prefix()) + "staterphi_pulls", "layer; #Deltar#phi_{track-cluster}/#sigma_{rphi}^{state}", 57, 0, 57, 100, -5, 5);
+  h = new TH2F(TString(get_histo_prefix()) + "staterphi_pulls", ";layer; #Deltar#phi_{track-cluster}/#sigma_{rphi}^{state}", 57, 0, 57, 100, -5, 5);
   hm->registerHisto(h);
 
-  h = new TH2F(TString(get_histo_prefix()) + "clusz_pulls", "layer; #Deltaz_{track-cluster}/#sigma_{z}^{clus}", 57, 0, 57, 100, -5, 5);
+  h = new TH2F(TString(get_histo_prefix()) + "clusz_pulls", ";layer; #Deltaz_{track-cluster}/#sigma_{z}^{clus}", 57, 0, 57, 100, -5, 5);
   hm->registerHisto(h);
 
-  h = new TH2F(TString(get_histo_prefix()) + "clusrphi_pulls", "layer; #Deltar#phi_{track-cluster}/#sigma_{r#phi}^{clus}", 57, 0, 57, 100, -5, 5);
+  h = new TH2F(TString(get_histo_prefix()) + "clusrphi_pulls", ";layer; #Deltar#phi_{track-cluster}/#sigma_{r#phi}^{clus}", 57, 0, 57, 100, -5, 5);
+  hm->registerHisto(h);
+
+  h = new TH2F(TString(get_histo_prefix()) + "nstates_vs_nclus", ";Number of states on track; Number of clusters on track", 57, 0, 57, 57, 0, 57);
   hm->registerHisto(h);
 
   TTree* t(nullptr);
@@ -215,44 +218,47 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
   Fun4AllHistoManager* hm = QAHistManagerDef::getHistoManager();
   assert(hm);
 
-  auto h_beta = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "betadz"));
+  auto h_beta = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "betadz"));
   assert(h_beta);
 
-  auto h_alpha = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "alphardphi"));
+  auto h_alpha = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "alphardphi"));
   assert(h_alpha);
 
-  auto h_rphiResid = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "rphiResid"));
+  auto h_rphiResid = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "rphiResid"));
   assert(h_rphiResid);
 
-  auto h_zResid = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "zResid"));
+  auto h_zResid = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "zResid"));
   assert(h_zResid);
 
-  auto h_etaResid = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "etaResid"));
+  auto h_etaResid = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "etaResid"));
   assert(h_etaResid);
 
-  auto h_etaResidLayer = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "etaResidLayer"));
+  auto h_etaResidLayer = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "etaResidLayer"));
   assert(h_etaResidLayer);
 
-  auto h_zResidLayer = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "zResidLayer"));
+  auto h_zResidLayer = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "zResidLayer"));
   assert(h_zResidLayer);
 
-  auto h_deltarphi_layer = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "deltarphi_layer"));
+  auto h_deltarphi_layer = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "deltarphi_layer"));
   assert(h_deltarphi_layer);
 
-  auto h_deltaz_layer = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "deltaz_layer"));
+  auto h_deltaz_layer = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "deltaz_layer"));
   assert(h_deltaz_layer);
 
-  auto h_statez_pulls = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "statez_pulls"));
+  auto h_statez_pulls = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "statez_pulls"));
   assert(h_statez_pulls);
 
-  auto h_staterphi_pulls = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "staterphi_pulls"));
+  auto h_staterphi_pulls = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "staterphi_pulls"));
   assert(h_staterphi_pulls);
 
-  auto h_clusz_pulls = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "clusz_pulls"));
+  auto h_clusz_pulls = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "clusz_pulls"));
   assert(h_clusz_pulls);
 
-  auto h_clusrphi_pulls = dynamic_cast<TH1*>(hm->getHisto(get_histo_prefix() + "clusrphi_pulls"));
+  auto h_clusrphi_pulls = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "clusrphi_pulls"));
   assert(h_clusrphi_pulls);
+
+  auto h_nstates_vs_nclus = dynamic_cast<TH2*>(hm->getHisto(get_histo_prefix() + "nstates_vs_nclus"));
+  assert(h_nstates_vs_nclus);
 
   auto t_tree = dynamic_cast<TTree*>(hm->getHisto(get_histo_prefix() + "residTree"));
   assert(t_tree);
@@ -393,6 +399,10 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
 
       t_tree->Fill();
     }
+    int nstates = track->size_states();
+    int nclus = (track->get_silicon_seed()->size_cluster_keys()) + (track->get_tpc_seed()->size_cluster_keys());
+    h_nstates_vs_nclus->Fill(nstates,nclus);
+    std::cout<<"nstates = "<<nstates<<" , nclus = "<<nclus<<std::endl;
   }
 
   m_event++;
@@ -408,13 +418,17 @@ bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
     return false;
   }
 
-  // ignore tracks with too few mvtx, intt and micromegas hits
+  // ignore tracks with too few mvtx, intt tpc and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
   {
     return false;
   }
   if (count_clusters<TrkrDefs::inttId>(cluster_keys) < 2)
+  {
+    return false;
+  }
+  if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < 20)
   {
     return false;
   }

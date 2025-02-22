@@ -13,6 +13,8 @@
 
 #include <memory>
 
+class TH3;
+
 /**
  * \class TpcSpaceChargeMatrixInversion
  * \brief performs space charge distortion reconstruction using tracks
@@ -48,9 +50,14 @@ class TpcSpaceChargeMatrixInversion : public Fun4AllBase
   /// save distortions
   void save_distortion_corrections(const std::string& /*filename*/ = "DistortionCorrections.root");
 
+  // set min cluster count cut
+  void set_min_cluster_count(int min) {min_cluster_count = min;}
+
   //@}
 
  private:
+  TH3* transform_dphi_rdphi(const TH3* source, const TString& name);
+
   /// matrix container
   std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container;
 
@@ -59,6 +66,9 @@ class TpcSpaceChargeMatrixInversion : public Fun4AllBase
 
   /// central membrane distortion container
   std::unique_ptr<TpcDistortionCorrectionContainer> m_dcc_cm;
+
+  std::array<TH3*, 2> hDRPint = {{nullptr, nullptr}};
+  int min_cluster_count = 5;
 };
 
 #endif

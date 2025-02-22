@@ -12,6 +12,7 @@
 #include <tpc/TpcDistortionCorrectionContainer.h>
 
 #include <TFile.h>
+#include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
 
@@ -201,7 +202,7 @@ void TpcSpaceChargeMatrixInversion::calculate_distortion_corrections()
         const auto icell = m_matrix_container->get_cell_index(iphi, ir, iz);
 
         // minimum number of entries per bin
-        static constexpr int min_cluster_count = 5;
+        //static constexpr int min_cluster_count = 5;
         const auto cell_entries = m_matrix_container->get_entries(icell);
         if (cell_entries < min_cluster_count)
         {
@@ -242,7 +243,6 @@ void TpcSpaceChargeMatrixInversion::calculate_distortion_corrections()
 
         // fill histograms
         hentries->SetBinContent(iphi + 1, ir + 1, iz + 1, cell_entries);
-std::cout<<"[iphi, ir, iz] = ["<<iphi + 1<<", "<<ir + 1<<", "<<iz + 1<<"] cell_entries = "<<cell_entries<<std::endl;
 
         hphi->SetBinContent(iphi + 1, ir + 1, iz + 1, result(0));
         hphi->SetBinError(iphi + 1, ir + 1, iz + 1, std::sqrt(cov(0, 0)));
@@ -298,6 +298,8 @@ void TpcSpaceChargeMatrixInversion::extrapolate_distortion_corrections()
     return;
   }
 
+  std::string name[2] = {"_negz", "_posz"};
+
   // handle sides independently
   for (int i = 0; i < 2; ++i)
   {
@@ -339,6 +341,7 @@ void TpcSpaceChargeMatrixInversion::extrapolate_distortion_corrections()
     // labmda function to process a given histogram, and return the updated one
     auto process_histogram = [&hmask, &hmask_extrap_z, &hmask_extrap_p, &hmask_extrap_p2, side](TH3* h, TH2* h_cm)
     {
+
       // perform z extrapolation
       TpcSpaceChargeReconstructionHelper::extrapolate_z(h, hmask.get());
 
@@ -352,9 +355,15 @@ void TpcSpaceChargeMatrixInversion::extrapolate_distortion_corrections()
       TpcSpaceChargeReconstructionHelper::extrapolate_z2(h, hmask_extrap_p2.get(), side);
     };
 
+    if (!m_dcc_cm)
+    {
+      m_dcc_cm.reset(new TpcDistortionCorrectionContainer);
+    }
+
     process_histogram(static_cast<TH3*>(m_dcc_average->m_hDRint[i]), static_cast<TH2*>(m_dcc_cm->m_hDRint[i]));
     process_histogram(static_cast<TH3*>(m_dcc_average->m_hDPint[i]), static_cast<TH2*>(m_dcc_cm->m_hDPint[i]));
     process_histogram(static_cast<TH3*>(m_dcc_average->m_hDZint[i]), static_cast<TH2*>(m_dcc_cm->m_hDZint[i]));
+    hDRPint[i] = transform_dphi_rdphi(static_cast<TH3*>(m_dcc_average->m_hDPint[i]), "hIntDistortionRP" + name[i]);
   }
 }
 
@@ -383,6 +392,62 @@ void TpcSpaceChargeMatrixInversion::save_distortion_corrections(const std::strin
     }
   }
 
+  for (const auto& h : hDRPint)
+  {
+    if (h)
+    {
+      h->Write(h->GetName());
+    }
+  }
+
   // close TFile
   outputfile->Close();
+}
+
+//___________________________________________________________________________
+TH3* TpcSpaceChargeMatrixInversion::transform_dphi_rdphi(const TH3* source, const TString& name)
+{
+  // create new histogram
+  auto hout = new TH3F(name, name,
+                       source->GetXaxis()->GetNbins(), source->GetXaxis()->GetXmin(), source->GetXaxis()->GetXmax(),
+		       source->GetYaxis()->GetNbins(), source->GetYaxis()->GetXmin(), source->GetYaxis()->GetXmax(),
+		       source->GetZaxis()->GetNbins(), source->GetZaxis()->GetXmin(), source->GetZaxis()->GetXmax());
+
+  // update axis legend
+  hout->GetXaxis()->SetTitle(source->GetXaxis()->GetTitle());
+  hout->GetYaxis()->SetTitle(source->GetYaxis()->GetTitle());
+  hout->GetZaxis()->SetTitle(source->GetZaxis()->GetTitle());
+  hout->GetZaxis()->SetTitle("r#Delta#phi (cm)");
+
+  // copy content
+  const auto pbins = source->GetXaxis()->GetNbins();
+  const auto rbins = source->GetYaxis()->GetNbins();
+  const auto zbins = source->GetZaxis()->GetNbins();
+
+  // fill center
+  for (int ip = 0; ip < pbins; ++ip)
+  {
+    for (int ir = 0; ir < rbins; ++ir)
+    {
+      float r = source->GetYaxis()->GetBinCenter(ir + 1);
+      for (int iz = 0; iz < zbins; ++iz)
+      {
+        hout->SetBinContent(ip + 1, ir + 1, iz + 1, r*source->GetBinContent(ip + 1, ir + 1, iz + 1));
+        hout->SetBinError(ip + 1, ir + 1, iz + 1, r*source->GetBinError(ip + 1, ir + 1, iz + 1));
+        if (Verbosity())
+        {
+          std::cout<<"TpcSpaceChargeMatrixInversion::transform_dphi_rdphi - "<<source->GetName()
+		  <<" p "<<source->GetXaxis()->GetBinCenter(ip + 1)
+		  <<" r "<<source->GetYaxis()->GetBinCenter(ir + 1)
+		  <<" z "<<source->GetZaxis()->GetBinCenter(iz + 1)
+		  <<" dphi "<<source->GetBinContent(ip + 1, ir + 1, iz + 1)
+		  <<" -> "
+		  <<" rdphi "<<hout->GetBinContent(ip + 1, ir + 1, iz + 1)
+		  <<std::endl;
+        }
+      }
+    } 
+  }
+
+  return hout;
 }

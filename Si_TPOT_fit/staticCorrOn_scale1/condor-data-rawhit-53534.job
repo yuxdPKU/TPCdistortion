@@ -45,7 +45,7 @@ Executable     = $(Initialdir)/run_rawhitdst.sh
 
 Nevent         = 1000
 RunNumber      = 53534
-FileList       = $(Initialdir)/../filelist/$(RunNumber)/rawhit_$INT(Segment,%05d).list
+FileList       = $(Initialdir)/../rawhitfilelist/$(RunNumber)/rawhit_$INT(Segment,%05d).list
 OutDir         = $(Initialdir)/
 OutPrefix      = clusters_seeds
 StepSize       = 1000

@@ -147,6 +147,8 @@ int PHTpcResiduals::Init(PHCompositeNode* /*topNode*/)
   std::cout << "PHTpcResiduals::Init - m_maxTBeta: " << m_maxTBeta << std::endl;
   std::cout << "PHTpcResiduals::Init - m_maxResidualDrphi: " << m_maxResidualDrphi << " cm" << std::endl;
   std::cout << "PHTpcResiduals::Init - m_maxResidualDz: " << m_maxResidualDz << " cm" << std::endl;
+  std::cout << "PHTpcResiduals::Init - m_minRPhiErr: " << m_minRPhiErr << " cm" << std::endl;
+  std::cout << "PHTpcResiduals::Init - m_minZErr: " << m_minZErr << " cm" << std::endl;
   std::cout << "PHTpcResiduals::Init - m_minPt: " << m_minPt << " GeV/c" << std::endl;
   std::cout << "PHTpcResiduals::Init - m_requireCrossing: " << m_requireCrossing << std::endl;
   std::cout << "PHTpcResiduals::Init - m_requireCM (for 1D): " << m_requireCM << std::endl;
@@ -266,13 +268,17 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
     return false;
   }
 
-  // ignore tracks with too few mvtx, intt and micromegas hits
+  // ignore tracks with too few mvtx, intt tpc and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
   {
     return false;
   }
   if (count_clusters<TrkrDefs::inttId>(cluster_keys) < 2)
+  {
+    return false;
+  }
+  if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < 20)
   {
     return false;
   }
@@ -524,7 +530,20 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
       std::cout << "PHTpcResiduals::processTrack -"
                 << " drphi: " << drphi
                 << " dz: " << dz
+                << " erp: " << erp
+                << " ez: " << ez
                 << std::endl;
+    }
+
+    // check rphi and z error
+    if (erp < m_minRPhiErr)
+    {
+      continue;
+    }
+
+    if (ez < m_minZErr)
+    {
+      continue;
     }
 
     const double trackPPhi = -trackStateParams.momentum()(0) * std::sin(trackPhi) + trackStateParams.momentum()(1) * std::cos(trackPhi);
@@ -919,7 +938,7 @@ void PHTpcResiduals::setGridDimensions(const int phiBins, const int rBins, const
   m_matrix_container->set_grid_dimensions(phiBins, rBins, zBins);
   m_matrix_container_1D_radius_negz->set_grid_dimensions(rBins);
   m_matrix_container_1D_radius_posz->set_grid_dimensions(rBins);
-  m_matrix_container_2D_radius_z->set_grid_dimensions(rBins, zBins);
+  m_matrix_container_2D_radius_z->set_grid_dimensions(phiBins, rBins, zBins);
 }
 
 //____________________________________________________________________________

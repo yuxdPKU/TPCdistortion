@@ -13,7 +13,7 @@
 
 #include <memory>
 
-class TH2;
+class TH3;
 
 /**
  * \class TpcSpaceChargeMatrixInversion2D
@@ -50,10 +50,14 @@ class TpcSpaceChargeMatrixInversion2D : public Fun4AllBase
   /// save distortions
   void save_distortion_corrections(const std::string& /*filename*/ = "DistortionCorrections.root");
 
-  TH2* transform_dphi_rdphi(const TH2* source, const TString& name);
+  // set min cluster count cut
+  void set_min_cluster_count(int min) {min_cluster_count = min;}
+
   //@}
 
  private:
+  TH3* transform_dphi_rdphi(const TH3* source, const TString& name);
+
   /// matrix container
   std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container;
 
@@ -63,8 +67,8 @@ class TpcSpaceChargeMatrixInversion2D : public Fun4AllBase
   /// central membrane distortion container
   std::unique_ptr<TpcDistortionCorrectionContainer> m_dcc_cm;
 
-  TH1* h_rdphi_negz;
-  TH1* h_rdphi_posz;
+  std::array<TH3*, 2> hDRPint = {{nullptr, nullptr}};
+  int min_cluster_count = 5;
 };
 
 #endif

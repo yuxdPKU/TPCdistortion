@@ -65,6 +65,16 @@ class PHTpcResiduals : public SubsysReco
   }
   //@}
 
+  void setMinRPhiErr(float minRPhiErr)
+  {
+    m_minRPhiErr = minRPhiErr;
+  }
+
+  void setMinZErr(float minZErr)
+  {
+    m_minZErr = minZErr;
+  }
+
   /// track min pT
   void setMinPt(double value)
   {
@@ -164,6 +174,9 @@ class PHTpcResiduals : public SubsysReco
   float m_maxResidualDrphi = 0.5;  // cm
   float m_maxTBeta = 1.5;
   float m_maxResidualDz = 0.5;  // cm
+
+  float m_minRPhiErr = 0.005;  // 0.005cm -- 50um
+  float m_minZErr = 0.01;  // 0.01cm -- 100um
 
   static constexpr float m_phiMin = 0;
   static constexpr float m_phiMax = 2. * M_PI;

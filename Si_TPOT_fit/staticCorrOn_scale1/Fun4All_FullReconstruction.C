@@ -294,6 +294,7 @@ void Fun4All_FullReconstruction(
   cprop->set_max_window(5.);
   cprop->Verbosity(0);
   cprop->set_pp_mode(true);
+  cprop->set_max_seeds(5000);
   se->registerSubsystem(cprop);
 
   // Always apply preliminary distortion corrections to TPC clusters before silicon matching
@@ -394,6 +395,9 @@ void Fun4All_FullReconstruction(
       residuals->setMaxTrackBeta(1.5);
       residuals->setMaxTrackResidualDrphi(2);
       residuals->setMaxTrackResidualDz(5);
+
+      residuals->setMinRPhiErr(0.005);
+      residuals->setMinZErr(0.01);
 
       // reconstructed distortion grid size (layer)
       residuals->setGridDimensions(48);
