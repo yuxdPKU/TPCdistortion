@@ -336,6 +336,7 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
       {
         std::cout << "   no state for cluster " << cluskey << "  in layer " << layer << std::endl;
       }
+      continue;
     }
 
     const auto crossing = track->get_crossing();

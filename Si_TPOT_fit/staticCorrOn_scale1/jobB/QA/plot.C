@@ -49,83 +49,107 @@ void plot()
   gStyle->SetOptStat(0);
   TGaxis::SetMaxDigits(3);
 
-  TFile* infile = new TFile("allqa_53534.root");
-  TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
-  float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
-  float tanAlpha, tanBeta;
-  intree->SetBranchAddress("dz",&dz);
-  intree->SetBranchAddress("drphi",&drphi);
-  intree->SetBranchAddress("clusZErr",&clusZErr);
-  intree->SetBranchAddress("stateZErr",&stateZErr);
-  intree->SetBranchAddress("clusZ",&clusZ);
-  intree->SetBranchAddress("clusR",&clusR);
-  intree->SetBranchAddress("clusPhi",&clusPhi);
-  intree->SetBranchAddress("clusRPhiErr",&clusRPhiErr);
-  intree->SetBranchAddress("stateRPhiErr",&stateRPhiErr);
-  intree->SetBranchAddress("tanAlpha",&tanAlpha);
-  intree->SetBranchAddress("tanBeta",&tanBeta);
+  const int nrun = 6;
+  //int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
+  //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
+  int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
+  int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+  //int mbdrates[nrun] = {250};
+  //int runs[nrun] = {53534};
 
-  TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R when |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
-
-  int nevent = intree->GetEntries();
-  for (int i=0; i<nevent; i++)
+  for (int k=0; k<nrun; k++)
   {
-    intree->GetEntry(i);
-    double erp = square(clusRPhiErr) + square(stateRPhiErr);
-    double ez = square(clusZErr) + square(stateZErr);
-    //if (erp < 0.005) continue; if (ez < 0.01) continue; // bug
-    if (sqrt(erp) < 0.005) continue; if (sqrt(ez) < 0.01) continue;
-    if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
-    if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
-
-    if (std::fabs(clusZ)<20) h2_drphi_r->Fill(clusR,drphi);
+    TFile* infile = new TFile(Form("allqa_%d.root",runs[k]));
+    TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
+    float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
+    float tanAlpha, tanBeta;
+    intree->SetBranchAddress("dz",&dz);
+    intree->SetBranchAddress("drphi",&drphi);
+    intree->SetBranchAddress("clusZErr",&clusZErr);
+    intree->SetBranchAddress("stateZErr",&stateZErr);
+    intree->SetBranchAddress("clusZ",&clusZ);
+    intree->SetBranchAddress("clusR",&clusR);
+    intree->SetBranchAddress("clusPhi",&clusPhi);
+    intree->SetBranchAddress("clusRPhiErr",&clusRPhiErr);
+    intree->SetBranchAddress("stateRPhiErr",&stateRPhiErr);
+    intree->SetBranchAddress("tanAlpha",&tanAlpha);
+    intree->SetBranchAddress("tanBeta",&tanBeta);
+  
+    TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R when |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
+  
+    int nevent = intree->GetEntries();
+    for (int i=0; i<nevent; i++)
+    {
+      intree->GetEntry(i);
+      double erp = square(clusRPhiErr) + square(stateRPhiErr);
+      double ez = square(clusZErr) + square(stateZErr);
+      //if (erp < 0.005) continue; if (ez < 0.01) continue; // bug
+      if (sqrt(erp) < 0.005) continue; if (sqrt(ez) < 0.01) continue;
+      if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
+      if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
+  
+      if (std::fabs(clusZ)<20) h2_drphi_r->Fill(clusR,drphi);
+    }
+  
+    /*
+    TCanvas *can = new TCanvas("can","",800,600);
+    gPad->SetLeftMargin(0.15);
+    gPad->SetRightMargin(0.15);
+    h2_drphi_r->Draw("colz");
+    can->Update();
+    can->SaveAs(Form("figure/%d_drphi_r.pdf",runs[k]));
+    */
+  
+    fit_gauss(h2_drphi_r, Form("figure/%d_drphi_r.pdf",runs[k]),1);
+   
   }
-
-  /*
-  TCanvas *can = new TCanvas("can","",800,600);
-  gPad->SetLeftMargin(0.15);
-  gPad->SetRightMargin(0.15);
-  h2_drphi_r->Draw("colz");
-  can->Update();
-  can->SaveAs("figure/53534_drphi_r.pdf");
-  */
-
-  fit_gauss(h2_drphi_r, Form("figure/53534_drphi_r.pdf"),1);
 }
 
 void fit_gauss(TH2* h, TString name, bool verbose=0)
 {
-  TGraphErrors *graph = new TGraphErrors();
+  TGraphErrors *graph_full = new TGraphErrors();
+  TGraphErrors *graph_sub = new TGraphErrors();
 
   int n = 1;
-  for (int i = 1; i <= h->GetNbinsX(); i+=n) {
+  for (int i = 1; i <= h->GetNbinsX(); i+=n)
+  {
     TH1D *projection = h->ProjectionY("projection", i, i+n);
     projection->GetYaxis()->SetTitle("Counts");
     projection->SetTitle(Form("%s , Bin %d R=%d cm",h->GetTitle(),i,(int)h->GetXaxis()->GetBinCenter(i)));
 
-    //TF1 *gausFit = new TF1("gausFit", "gaus", projection->GetXaxis()->GetXmin(), projection->GetXaxis()->GetXmax());
+    TF1 *gausFit_full = new TF1("gausFit_full", "gaus", projection->GetXaxis()->GetXmin(), projection->GetXaxis()->GetXmax());
+    projection->Fit(gausFit_full, "Q", "", projection->GetXaxis()->GetXmin(), projection->GetXaxis()->GetXmax());
 
     int maxBin = projection->GetMaximumBin();
     double maxBinCenter = projection->GetBinCenter(maxBin);
     double fitmin=maxBinCenter-0.5;
     double fitmax=maxBinCenter+0.5;
-    TF1 *gausFit = new TF1("gausFit", "gaus", fitmin, fitmax);
-
-    projection->Fit(gausFit, "Q", "", fitmin, fitmax);
+    TF1 *gausFit_sub = new TF1("gausFit_sub", "gaus", fitmin, fitmax);
+    projection->Fit(gausFit_sub, "Q", "", fitmin, fitmax);
 
     if (verbose>0)
     {
       TCanvas *can = new TCanvas("can", "Canvas", 800, 600);
       projection->Draw("hist");
-      gausFit->SetLineColor(kRed);
-      gausFit->Draw("same");
+      gausFit_full->SetLineColor(kRed);
+      gausFit_full->Draw("same");
+      gausFit_sub->SetLineColor(kBlue);
+      gausFit_sub->Draw("same");
       can->Update();
       can->SaveAs(name + Form(".gausFit_%d.pdf",i));
       delete can;
     }
 
-    Double_t mean = gausFit->GetParameter(1);
-    Double_t error = gausFit->GetParError(1);
+    Double_t mean_full = gausFit_full->GetParameter(1);
+    Double_t error_full = gausFit_full->GetParError(1);
+
+    Double_t mean_sub = gausFit_sub->GetParameter(1);
+    Double_t error_sub = gausFit_sub->GetParError(1);
+
+    if (verbose>0)
+    {
+      cout<<"Bin "<<i<<": full fit mean = "<<mean_full<<" +/- "<<error_full<<" , sub fit mean = "<<mean_sub<<" +/- "<<error_sub<<endl;
+    }
 
     double center = 0;
     double width = 0;
@@ -134,16 +158,21 @@ void fit_gauss(TH2* h, TString name, bool verbose=0)
       center += h->GetXaxis()->GetBinCenter(i+j) / n;
       width += h->GetXaxis()->GetBinWidth(i+j) / 2;
     }
-    graph->SetPoint(i-1, center, mean);
-    graph->SetPointError(i-1, width, error);
+    graph_full->SetPoint(i-1, center, mean_full);
+    graph_full->SetPointError(i-1, width, error_full);
+    graph_sub->SetPoint(i-1, center, mean_sub);
+    graph_sub->SetPointError(i-1, width, error_sub);
   }
 
   TCanvas *c1 = new TCanvas("c1", "Canvas", 800, 600);
   h->Draw("COLZ");
 
-  graph->SetMarkerStyle(20);
-  graph->SetMarkerColor(kRed);
-  graph->Draw("P");
+  graph_full->SetMarkerStyle(20);
+  graph_full->SetMarkerColor(kRed);
+  graph_full->Draw("P");
+  graph_sub->SetMarkerStyle(20);
+  graph_sub->SetMarkerColor(kBlack);
+  graph_sub->Draw("P");
 
   TLine *line = new TLine(h->GetXaxis()->GetXmin(), 0, h->GetXaxis()->GetXmax(), 0);
   line->SetLineColor(kRed);

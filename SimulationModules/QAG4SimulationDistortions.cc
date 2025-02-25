@@ -499,6 +499,7 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
       {
         std::cout << "   no state for cluster " << cluskey << "  in layer " << layer << std::endl;
       }
+      continue;
     }
 
     const auto crossing = track->get_crossing();
@@ -559,7 +560,6 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
     if (std::fabs(drphi)>0.1)
     {
       flag = false;
-      break;
     }
   }
 
