@@ -287,7 +287,117 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
     return false;
   }
 
+  if (checkTPOTResidual(track)==false)
+  {
+    return false;
+  }
+
   return true;
+}
+
+//___________________________________________________________________________________
+bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
+{
+  bool flag = true;
+
+  for (const auto& cluskey : get_cluster_keys(track))
+  {
+
+    // make sure cluster is from TPOT
+    const auto detId = TrkrDefs::getTrkrId(cluskey);
+    if (detId != TrkrDefs::micromegasId)
+    {
+      continue;
+    }
+
+    const auto cluster = m_clusterContainer->findCluster(cluskey);
+
+    SvtxTrackState* state = nullptr;
+
+    // the track states from the Acts fit are fitted to fully corrected clusters, and are on the surface
+    for (auto state_iter = track->begin_states();
+         state_iter != track->end_states();
+         ++state_iter)
+    {
+      SvtxTrackState* tstate = state_iter->second;
+      auto stateckey = tstate->get_cluskey();
+      if (stateckey == cluskey)
+      {
+        state = tstate;
+        break;
+      }
+    }
+
+    const auto layer = TrkrDefs::getLayer(cluskey);
+
+    if (!state)
+    {
+      if (Verbosity() > 1)
+      {
+        std::cout << "   no state for cluster " << cluskey << "  in layer " << layer << std::endl;
+      }
+    }
+
+    const auto crossing = track->get_crossing();
+    assert(crossing != SHRT_MAX);
+
+    // calculate residuals with respect to cluster
+    // Get all the relevant information for residual calculation
+    const auto globClusPos = m_globalPositionWrapper.getGlobalPositionDistortionCorrected(cluskey, cluster, crossing);
+    const double clusR = get_r(globClusPos(0), globClusPos(1));
+    const double clusPhi = std::atan2(globClusPos(1), globClusPos(0));
+    const double clusZ = globClusPos(2);
+
+    const double globStateX = state->get_x();
+    const double globStateY = state->get_y();
+    const double globStateZ = state->get_z();
+    const double globStatePx = state->get_px();
+    const double globStatePy = state->get_py();
+    const double globStatePz = state->get_pz();
+
+    const double trackR = std::sqrt(square(globStateX) + square(globStateY));
+
+    const double dr = clusR - trackR;
+    const double trackDrDt = (globStateX * globStatePx + globStateY * globStatePy) / trackR;
+    const double trackDxDr = globStatePx / trackDrDt;
+    const double trackDyDr = globStatePy / trackDrDt;
+    const double trackDzDr = globStatePz / trackDrDt;
+
+    const double trackX = globStateX + dr * trackDxDr;
+    const double trackY = globStateY + dr * trackDyDr;
+    const double trackZ = globStateZ + dr * trackDzDr;
+    const double trackPhi = std::atan2(trackY, trackX);
+
+    // Calculate residuals
+    const double drphi = clusR * deltaPhi(clusPhi - trackPhi);
+    if (std::isnan(drphi))
+    {
+      continue;
+    }
+
+    const double dz = clusZ - trackZ;
+    if (std::isnan(dz))
+    {
+      continue;
+    }
+
+    if (Verbosity() > 3)
+    {
+      std::cout << "PHTpcResiduals::checkTPOTResidual -"
+                << " drphi: " << drphi
+                << " dz: " << dz
+                << std::endl;
+    }
+
+    // check rphi and z error
+    if (std::fabs(drphi)>0.1)
+    {
+      flag = false;
+      break;
+    }
+  }
+
+  return flag;
 }
 
 //___________________________________________________________________________________
@@ -536,12 +646,12 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     }
 
     // check rphi and z error
-    if (erp < m_minRPhiErr)
+    if (std::sqrt(erp) < m_minRPhiErr)
     {
       continue;
     }
 
-    if (ez < m_minZErr)
+    if (std::sqrt(ez) < m_minZErr)
     {
       continue;
     }
@@ -869,9 +979,10 @@ int PHTpcResiduals::getCell_radius(const Acts::Vector3& loc)
 int PHTpcResiduals::getCell_rz(const Acts::Vector3& loc)
 {
   // get grid dimensions from matrix container
+  int pbins = 0;
   int rbins = 0;
   int zbins = 0;
-  m_matrix_container_2D_radius_z->get_grid_dimensions(rbins, zbins);
+  m_matrix_container_2D_radius_z->get_grid_dimensions(pbins, rbins, zbins);
 
   // r
   const auto r = get_r(loc(0), loc(1));

@@ -141,6 +141,7 @@ class PHTpcResiduals : public SubsysReco
 
   bool checkTrack(SvtxTrack *track) const;
   bool checkTrackCM(SvtxTrack *track) const;
+  bool checkTPOTResidual(SvtxTrack* track) const;
   void processTrack(SvtxTrack *track);
 
   /// fill track state from bound track parameters

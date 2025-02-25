@@ -574,8 +574,8 @@ TH3* TpcSpaceChargeReconstructionHelper::expand(const TH2* source, const int pbi
 	}
 	else
 	{
-          const auto content = source->GetBinContent(iy + 1, iz + 1);
-          const auto error = source->GetBinError(iy + 1, iz + 1);
+          const auto content = source->GetBinContent(iy, iz);
+          const auto error = source->GetBinError(iy, iz);
 	  h3->SetBinContent(ix, iy, iz, content);
 	  h3->SetBinError(ix, iy, iz, error);
 	}

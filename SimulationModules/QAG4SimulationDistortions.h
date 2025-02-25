@@ -36,6 +36,7 @@ class QAG4SimulationDistortions : public SubsysReco
 
   std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track);
   bool checkTrack(SvtxTrack* track);
+  bool checkTPOTResidual(SvtxTrack* track);
   void clearVector();
   void get_Tpot_info(SvtxTrack* track);
   SvtxTrackMap* m_trackMap = nullptr;

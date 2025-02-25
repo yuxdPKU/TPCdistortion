@@ -5,7 +5,6 @@ void plot2D_Ybin(TH3* h3, TH2* h2, float y)
   {
     for (int j = 1; j <= h3->GetNbinsZ(); j++)
     {
-      //cout<<"[phi,r,z] = "<<"["<<h3->GetXaxis()->GetBinCenter(i)<<","<<h3->GetYaxis()->GetBinCenter(ybin)<<","<<h3->GetZaxis()->GetBinCenter(j)<<"] = ["<<i<<","<<ybin<<","<<j<<"] = "<<h3->GetBinContent(i, ybin, j)<<endl;
       if (isnan(h3->GetBinContent(i, ybin, j)))
       {
         h2->SetBinContent(i, j, 0.0);
@@ -40,7 +39,7 @@ void SetTH2ZeroBin(TH2* h2)
   }
 }
 
-void draw2D_from3D()
+void draw2D_phiz_from3D()
 {
 gStyle->SetOptStat(0);
 TGaxis::SetMaxDigits(3);
@@ -58,11 +57,13 @@ for (const auto& selectR : selectRs)
 // 53534 - 250khz 3013.5338345864657
 // 53285 - 70khz 787.2765957446811
 
-const int nrun = 6;
+const int nrun = 1;
 //int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
 //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
-int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
-int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+//int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
+//int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+int mbdrates[nrun] = {250};
+int runs[nrun] = {53534};
 
 TFile* file_3D_map[nrun];
 TH3 *h_N_prz_pos[nrun], *h_R_prz_pos[nrun], *h_P_prz_pos[nrun], *h_Z_prz_pos[nrun], *h_RP_prz_pos[nrun];
@@ -71,7 +72,8 @@ TH2 *h_N_pz_pos[nrun], *h_R_pz_pos[nrun], *h_P_pz_pos[nrun], *h_Z_pz_pos[nrun], 
 TH2 *h_N_pz_neg[nrun], *h_R_pz_neg[nrun], *h_P_pz_neg[nrun], *h_Z_pz_neg[nrun], *h_RP_pz_neg[nrun];
 for (int i = 0; i < nrun; i++)
 {
-  file_3D_map[i] = new TFile(Form("Rootfiles/Distortions_full_mm_%d.root",runs[i]),"");
+  //file_3D_map[i] = new TFile(Form("Rootfiles/Distortions_full_mm_%d.root",runs[i]),"");
+  file_3D_map[i] = new TFile(Form("Rootfiles/Distortions_2D_mm_%d_rz.root",runs[i]),"");
   h_R_prz_pos[i] = (TH3*) file_3D_map[i]->Get("hIntDistortionR_posz");
   h_P_prz_pos[i] = (TH3*) file_3D_map[i]->Get("hIntDistortionP_posz");
   h_Z_prz_pos[i] = (TH3*) file_3D_map[i]->Get("hIntDistortionZ_posz");
@@ -98,19 +100,19 @@ for (int i = 0; i < nrun; i++)
   h_RP_pz_pos[i] = new TH2F(Form("hIntDistortionRP_posz_%d",runs[i]),Form("Rd#phi @ R=%d cm;#phi (rad);Z (cm);Rd#phi (cm)",(int)selectR),
 		  h_RP_prz_pos[i]->GetXaxis()->GetNbins(),h_RP_prz_pos[i]->GetXaxis()->GetXmin(),h_RP_prz_pos[i]->GetXaxis()->GetXmax(),
 		  h_RP_prz_pos[i]->GetZaxis()->GetNbins(),h_RP_prz_pos[i]->GetZaxis()->GetXmin(),h_RP_prz_pos[i]->GetZaxis()->GetXmax());
-  h_N_pz_neg[i] = new TH2F(Form("hentries_negz_%d",runs[i]),Form("N @ R=-%d cm;#phi (rad);Z (cm);N",(int)selectR),
+  h_N_pz_neg[i] = new TH2F(Form("hentries_negz_%d",runs[i]),Form("N @ R=%d cm;#phi (rad);Z (cm);N",(int)selectR),
 		  h_N_prz_neg[i]->GetXaxis()->GetNbins(),h_N_prz_neg[i]->GetXaxis()->GetXmin(),h_N_prz_neg[i]->GetXaxis()->GetXmax(),
 		  h_N_prz_neg[i]->GetZaxis()->GetNbins(),h_N_prz_neg[i]->GetZaxis()->GetXmin(),h_N_prz_neg[i]->GetZaxis()->GetXmax());
-  h_R_pz_neg[i] = new TH2F(Form("hIntDistortionR_negz_%d",runs[i]),Form("dR @ R=-%d cm;#phi (rad);Z (cm);dR (cm)",(int)selectR),
+  h_R_pz_neg[i] = new TH2F(Form("hIntDistortionR_negz_%d",runs[i]),Form("dR @ R=%d cm;#phi (rad);Z (cm);dR (cm)",(int)selectR),
 		  h_R_prz_neg[i]->GetXaxis()->GetNbins(),h_R_prz_neg[i]->GetXaxis()->GetXmin(),h_R_prz_neg[i]->GetXaxis()->GetXmax(),
 		  h_R_prz_neg[i]->GetZaxis()->GetNbins(),h_R_prz_neg[i]->GetZaxis()->GetXmin(),h_R_prz_neg[i]->GetZaxis()->GetXmax());
-  h_P_pz_neg[i] = new TH2F(Form("hIntDistortionP_negz_%d",runs[i]),Form("d#phi @ R=-%d cm;#phi (rad);Z (cm);d#phi (rad)",(int)selectR),
+  h_P_pz_neg[i] = new TH2F(Form("hIntDistortionP_negz_%d",runs[i]),Form("d#phi @ R=%d cm;#phi (rad);Z (cm);d#phi (rad)",(int)selectR),
 		  h_P_prz_neg[i]->GetXaxis()->GetNbins(),h_P_prz_neg[i]->GetXaxis()->GetXmin(),h_P_prz_neg[i]->GetXaxis()->GetXmax(),
 		  h_P_prz_neg[i]->GetZaxis()->GetNbins(),h_P_prz_neg[i]->GetZaxis()->GetXmin(),h_P_prz_neg[i]->GetZaxis()->GetXmax());
-  h_Z_pz_neg[i] = new TH2F(Form("hIntDistortionZ_negz_%d",runs[i]),Form("dz @ R=-%d cm;#phi (rad);Z (cm);dz (cm)",(int)selectR),
+  h_Z_pz_neg[i] = new TH2F(Form("hIntDistortionZ_negz_%d",runs[i]),Form("dz @ R=%d cm;#phi (rad);Z (cm);dz (cm)",(int)selectR),
 		  h_Z_prz_neg[i]->GetXaxis()->GetNbins(),h_Z_prz_neg[i]->GetXaxis()->GetXmin(),h_Z_prz_neg[i]->GetXaxis()->GetXmax(),
 		  h_Z_prz_neg[i]->GetZaxis()->GetNbins(),h_Z_prz_neg[i]->GetZaxis()->GetXmin(),h_Z_prz_neg[i]->GetZaxis()->GetXmax());
-  h_RP_pz_neg[i] = new TH2F(Form("hIntDistortionRP_negz_%d",runs[i]),Form("Rd#phi @ R=-%d cm;#phi (rad);Z (cm);Rd#phi (cm)",(int)selectR),
+  h_RP_pz_neg[i] = new TH2F(Form("hIntDistortionRP_negz_%d",runs[i]),Form("Rd#phi @ R=%d cm;#phi (rad);Z (cm);Rd#phi (cm)",(int)selectR),
 		  h_RP_prz_neg[i]->GetXaxis()->GetNbins(),h_RP_prz_neg[i]->GetXaxis()->GetXmin(),h_RP_prz_neg[i]->GetXaxis()->GetXmax(),
 		  h_RP_prz_neg[i]->GetZaxis()->GetNbins(),h_RP_prz_neg[i]->GetZaxis()->GetXmin(),h_RP_prz_neg[i]->GetZaxis()->GetXmax());
   plot2D_Ybin(h_N_prz_pos[i],h_N_pz_pos[i],selectR);

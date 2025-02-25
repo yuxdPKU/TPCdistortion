@@ -12,6 +12,7 @@
 #include <tpc/TpcDistortionCorrectionContainer.h>
 
 #include <TFile.h>
+#include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
 
@@ -22,11 +23,11 @@
 
 namespace
 {
-  // TODO: could try to get the r and z range from TPC geometry
   // phi range
   static constexpr float m_phimin = 0;
   static constexpr float m_phimax = 2. * M_PI;
 
+  // TODO: could try to get the r and z range from TPC geometry
   // r range
   static constexpr float m_rmin = 20;
   static constexpr float m_rmax = 78;
@@ -349,6 +350,11 @@ void TpcSpaceChargeMatrixInversion2D::extrapolate_distortion_corrections()
       // perform second z interpolation from readout plane to outermost micromegas module using masks
       TpcSpaceChargeReconstructionHelper::extrapolate_z2(h, hmask_extrap_p2.get(), side);
     };
+
+    if (!m_dcc_cm)
+    {
+      m_dcc_cm.reset(new TpcDistortionCorrectionContainer);
+    }
 
     process_histogram(static_cast<TH3*>(m_dcc_average->m_hDRint[i]), static_cast<TH2*>(m_dcc_cm->m_hDRint[i]));
     process_histogram(static_cast<TH3*>(m_dcc_average->m_hDPint[i]), static_cast<TH2*>(m_dcc_cm->m_hDPint[i]));

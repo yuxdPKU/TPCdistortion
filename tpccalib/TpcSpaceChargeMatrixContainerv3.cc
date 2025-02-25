@@ -137,10 +137,11 @@ void TpcSpaceChargeMatrixContainerv3::add_to_rhs(int cell_index, int i, float va
 bool TpcSpaceChargeMatrixContainerv3::add(const TpcSpaceChargeMatrixContainer& other)
 {
   // check dimensions
+  int pbins = 0;
   int rbins = 0;
   int zbins = 0;
-  other.get_grid_dimensions(rbins, zbins);
-  if ((m_rbins != rbins) || (m_zbins != zbins))
+  other.get_grid_dimensions(pbins, rbins, zbins);
+  if ((m_pbins != pbins) || (m_rbins != rbins) || (m_zbins != zbins))
   {
     std::cout << "TpcSpaceChargeMatrixContainerv3::add - inconsistent grid sizes" << std::endl;
     return false;
