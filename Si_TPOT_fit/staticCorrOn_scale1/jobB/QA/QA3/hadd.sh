@@ -4,5 +4,5 @@ runs=( 53534 )
 for ((k=0; k<${#runs[@]}; k++))
 do
   echo hadd ${runs[$k]}
-  hadd -k -f allqa_${runs[$k]}.root ../../Reconstructed/${runs[$k]}/*qa.root
+  hadd -k allqa_${runs[$k]}.root ../../Reconstructed/${runs[$k]}/*qa.root
 done

@@ -6,6 +6,7 @@
 #include <fun4all/SubsysReco.h>
 #include <tpc/TpcGlobalPositionWrapper.h>
 #include <trackbase/TrkrDefs.h>
+#include <trackbase_historic/TrackSeed.h>
 
 #include <math.h>
 #include <string>
@@ -16,6 +17,7 @@ class SvtxTrackMap;
 class TrkrClusterContainer;
 class SvtxTrack;
 class ActsGeometry;
+class PHG4TpcCylinderGeomContainer;
 
 class QAG4SimulationDistortions : public SubsysReco
 {
@@ -37,11 +39,13 @@ class QAG4SimulationDistortions : public SubsysReco
   std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track);
   bool checkTrack(SvtxTrack* track);
   bool checkTPOTResidual(SvtxTrack* track);
+  float calc_dedx(TrackSeed* tpcseed, TrkrClusterContainer* clustermap, PHG4TpcCylinderGeomContainer* tpcGeom);
   void clearVector();
   void get_Tpot_info(SvtxTrack* track);
   SvtxTrackMap* m_trackMap = nullptr;
   TrkrClusterContainer* m_clusterContainer = nullptr;
   ActsGeometry* m_tGeometry = nullptr;
+  PHG4TpcCylinderGeomContainer *m_tpcGeom = nullptr;
 
   //! tpc global position wrapper
   TpcGlobalPositionWrapper m_globalPositionWrapper;
@@ -68,6 +72,7 @@ class QAG4SimulationDistortions : public SubsysReco
   float m_statePt = NAN;
   float m_statePz = NAN;
   float m_trackPt = NAN;
+  float m_trackdEdx = NAN;
   int m_charge = -10;
   int m_crossing = -10;
 

@@ -49,13 +49,13 @@ void plot()
   gStyle->SetOptStat(0);
   TGaxis::SetMaxDigits(3);
 
-  const int nrun = 1;
+  const int nrun = 6;
   //int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
   //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
-  //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
-  //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-  int mbdrates[nrun] = {250};
-  int runs[nrun] = {53534};
+  int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
+  int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+  //int mbdrates[nrun] = {250};
+  //int runs[nrun] = {53534};
 
   for (int k=0; k<nrun; k++)
   {

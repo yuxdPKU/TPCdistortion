@@ -425,21 +425,21 @@ TH3* TpcSpaceChargeMatrixInversion2D::transform_dphi_rdphi(const TH3* source, co
   {
     for (int ir = 0; ir < rbins; ++ir)
     {
-      float r = source->GetXaxis()->GetBinCenter(ir + 1);
+      float r = source->GetYaxis()->GetBinCenter(ir + 1);
       for (int iz = 0; iz < zbins; ++iz)
       {
         hout->SetBinContent(ip + 1, ir + 1, iz + 1, r*source->GetBinContent(ip + 1, ir + 1, iz + 1));
         hout->SetBinError(ip + 1, ir + 1, iz + 1, r*source->GetBinError(ip + 1, ir + 1, iz + 1));
         if (Verbosity())
         {
-		  std::cout<<"TpcSpaceChargeMatrixInversion2D::transform_dphi_rdphi - "<<source->GetName()
-                  <<" p "<<source->GetXaxis()->GetBinCenter(ip + 1)
-                  <<" r "<<source->GetYaxis()->GetBinCenter(ir + 1)
-                  <<" z "<<source->GetZaxis()->GetBinCenter(iz + 1)
-                  <<" dphi "<<source->GetBinContent(ip + 1, ir + 1, iz + 1)
-                  <<" -> "
-                  <<" rdphi "<<hout->GetBinContent(ip + 1, ir + 1, iz + 1)
-                  <<std::endl;
+          std::cout<<"TpcSpaceChargeMatrixInversion2D::transform_dphi_rdphi - "<<source->GetName()
+		  <<" p "<<source->GetXaxis()->GetBinCenter(ip + 1)
+		  <<" r "<<source->GetYaxis()->GetBinCenter(ir + 1)
+		  <<" z "<<source->GetZaxis()->GetBinCenter(iz + 1)
+		  <<" dphi "<<source->GetBinContent(ip + 1, ir + 1, iz + 1)
+		  <<" -> "
+		  <<" rdphi "<<hout->GetBinContent(ip + 1, ir + 1, iz + 1)
+		  <<std::endl;
         }
       }
     } 

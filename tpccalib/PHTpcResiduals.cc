@@ -278,7 +278,7 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
   {
     return false;
   }
-  if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < 20)
+  if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < 35)
   {
     return false;
   }

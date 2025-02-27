@@ -74,8 +74,8 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   //int run = 53876;
 
   //const TString inputFile = Form( "DST/CONDOR%s/TpcSpaceChargeMatrices%s_*.root", tag.Data(), tag.Data() );
-  const TString inputFile = Form( "/sphenix/u/xyu3/hftg01/DST_FOR_DISTORTION_OFF/Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
-  //const TString inputFile = Form( "../Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
+  //const TString inputFile = Form( "/sphenix/u/xyu3/hftg01/DST_FOR_DISTORTION/Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
+  const TString inputFile = Form( "../Reconstructed/%d/clusters_seeds_%d-*.root_PhTpcResiduals.root", run, run );
 
   // Central membrane distortion corrections
   /*
