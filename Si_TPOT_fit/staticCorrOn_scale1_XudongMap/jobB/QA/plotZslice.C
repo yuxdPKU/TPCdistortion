@@ -1,4 +1,4 @@
-void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0);
+void fit_gauss(TH2* h, TString name, bool verbose=0);
 
 namespace
 {
@@ -44,18 +44,18 @@ float getPhi(float phi)
   return phi;
 }
 
-void plot()
+void plotZslice()
 {
   gStyle->SetOptStat(0);
   TGaxis::SetMaxDigits(3);
 
-  const int nrun = 6;
+  const int nrun = 1;
   //int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
   //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
-  int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
-  int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-  //int mbdrates[nrun] = {250};
-  //int runs[nrun] = {53534};
+  //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
+  //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+  int mbdrates[nrun] = {250};
+  int runs[nrun] = {53534};
 
   for (int k=0; k<nrun; k++)
   {
@@ -74,8 +74,17 @@ void plot()
     intree->SetBranchAddress("stateRPhiErr",&stateRPhiErr);
     intree->SetBranchAddress("tanAlpha",&tanAlpha);
     intree->SetBranchAddress("tanBeta",&tanBeta);
-  
-    TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R when |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
+
+    float Lmin=-50;
+    float Lmax=50;
+    const int nzslice=10;
+    TH2* h2_drphi_r[nzslice];
+    for (int l=0; l<nzslice; l++)
+    {
+      float lmin = Lmin + (Lmax-Lmin) / nzslice * l;
+      float lmax = Lmin + (Lmax-Lmin) / nzslice * (l+1);
+      h2_drphi_r[l] = new TH2F(Form("h2_drphi_r_z%d",l),Form("Rd#phi vs. R for %d < Z < %d cm;R (cm);Rd#phi (cm)",(int) lmin,(int) lmax),16,20,78,50,-2,2);
+    }
   
     int nevent = intree->GetEntries();
     for (int i=0; i<nevent; i++)
@@ -88,7 +97,16 @@ void plot()
       if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
       if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
   
-      if (std::fabs(clusZ)<20) h2_drphi_r->Fill(clusR,drphi);
+      int index=-1;
+      for (int l=0; l<nzslice; l++)
+      {
+        float lmin = Lmin + (Lmax-Lmin) / nzslice * l;
+        float lmax = Lmin + (Lmax-Lmin) / nzslice * (l+1);
+	if (clusZ>lmin && clusZ<lmax) index=l;
+      }
+      if (index==-1) continue;
+      else h2_drphi_r[index]->Fill(clusR,drphi);
+
     }
   
     /*
@@ -100,11 +118,15 @@ void plot()
     can->SaveAs(Form("figure/%d_drphi_r.pdf",runs[k]));
     */
   
-    fit_gauss(h2_drphi_r, Form("figure/%d_drphi_r.pdf",runs[k]), runs[k], 1);
+    for (int l=0; l<nzslice; l++)
+    {
+      fit_gauss(h2_drphi_r[l], Form("figure/%d_drphi_r_z%d.pdf",runs[k],l),0);
+    }
+   
   }
 }
 
-void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0)
+void fit_gauss(TH2* h, TString name, bool verbose=0)
 {
   TGraphErrors *graph_full = new TGraphErrors();
   TGraphErrors *graph_sub = new TGraphErrors();
@@ -176,13 +198,6 @@ void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0)
   TLine *line = new TLine(h->GetXaxis()->GetXmin(), 0, h->GetXaxis()->GetXmax(), 0);
   line->SetLineColor(kRed);
   line->Draw();
-
-  TFile* output = new TFile(Form("rdphi_1D_%d.root",runnumber),"recreate");
-  output->cd();
-  graph_full->Write(Form("rdphi_1D_full_%d",runnumber));
-  graph_sub->Write(Form("rdphi_1D_sub_%d",runnumber));
-  output->Write();
-  output->Close();
 
   c1->Update();
   c1->SaveAs(name);

@@ -1,4 +1,4 @@
-void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0);
+void fit_gauss(TH2* h, TString name, bool verbose=0);
 
 namespace
 {
@@ -49,13 +49,13 @@ void plot()
   gStyle->SetOptStat(0);
   TGaxis::SetMaxDigits(3);
 
-  const int nrun = 6;
+  const int nrun = 1;
   //int mbdrates[7] = {70, 250, 300, 380, 400, 430, 550};
   //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
-  int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
-  int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-  //int mbdrates[nrun] = {250};
-  //int runs[nrun] = {53534};
+  //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
+  //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
+  int mbdrates[nrun] = {250};
+  int runs[nrun] = {53534};
 
   for (int k=0; k<nrun; k++)
   {
@@ -100,11 +100,12 @@ void plot()
     can->SaveAs(Form("figure/%d_drphi_r.pdf",runs[k]));
     */
   
-    fit_gauss(h2_drphi_r, Form("figure/%d_drphi_r.pdf",runs[k]), runs[k], 1);
+    fit_gauss(h2_drphi_r, Form("figure/%d_drphi_r.pdf",runs[k]),1);
+   
   }
 }
 
-void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0)
+void fit_gauss(TH2* h, TString name, bool verbose=0)
 {
   TGraphErrors *graph_full = new TGraphErrors();
   TGraphErrors *graph_sub = new TGraphErrors();
@@ -176,13 +177,6 @@ void fit_gauss(TH2* h, TString name, int runnumber, bool verbose=0)
   TLine *line = new TLine(h->GetXaxis()->GetXmin(), 0, h->GetXaxis()->GetXmax(), 0);
   line->SetLineColor(kRed);
   line->Draw();
-
-  TFile* output = new TFile(Form("rdphi_1D_%d.root",runnumber),"recreate");
-  output->cd();
-  graph_full->Write(Form("rdphi_1D_full_%d",runnumber));
-  graph_sub->Write(Form("rdphi_1D_sub_%d",runnumber));
-  output->Write();
-  output->Close();
 
   c1->Update();
   c1->SaveAs(name);
