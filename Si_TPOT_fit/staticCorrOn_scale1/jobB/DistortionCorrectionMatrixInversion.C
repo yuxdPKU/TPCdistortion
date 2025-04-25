@@ -39,13 +39,13 @@ std::vector<std::string> list_files( const std::string& selection )
 //_______________________________________________
 void DistortionCorrectionMatrixInversion(int run=53285)
 {
-  TpcSpaceChargeReconstructionHelper::set_phi_range_central( {-1.72816,-1.42667} );
-  TpcSpaceChargeReconstructionHelper::set_phi_range_east( {-2.2573,-1.95558} );
-  TpcSpaceChargeReconstructionHelper::set_phi_range_west( {-1.20596,-0.901669} );
+  TpcSpaceChargeReconstructionHelper::set_phi_range_central( {-1.73246,-1.43608} );
+  TpcSpaceChargeReconstructionHelper::set_phi_range_east( {-2.26272,-1.96089} );
+  TpcSpaceChargeReconstructionHelper::set_phi_range_west( {-1.21241,-0.909953} );
 
-  TpcSpaceChargeReconstructionHelper::set_theta_range_central( {{-0.784291,-0.608116}, {-0.566685,-0.0296837}, {0.0267087,0.565814}, {0.606447,0.915196}} );
-  TpcSpaceChargeReconstructionHelper::set_theta_range_east( {{-0.637541,-0.134304}, {0.135532,0.639481}} );
-  TpcSpaceChargeReconstructionHelper::set_theta_range_west( {{-0.641875,-0.138102}, {0.123857,0.633557}} );
+  TpcSpaceChargeReconstructionHelper::set_theta_range_central( {{-0.788212,-0.613404}, {-0.568656,-0.0325273}, {0.0276558,0.566484}, {0.609928,0.917104}} );
+  TpcSpaceChargeReconstructionHelper::set_theta_range_east( {{-0.641231,-0.140061}, {0.133491,0.638103}} );
+  TpcSpaceChargeReconstructionHelper::set_theta_range_west( {{-0.643933,-0.14138}, {0.13084,0.63809}} );
 
   TpcSpaceChargeReconstructionHelper::Verbosity( 2 );
 

@@ -20,12 +20,13 @@ echo running: $this_script $*
 nEvents=$1
 InClusterDst=$2
 InClusterPath=$3
-InSeedDstList=$4
+InSeedDst=$4
 InSeedPath=$5
 OutDir=$6
 OutPrefix=$7
 Index=$8
 StepSize=$9
 
-root.exe -q -b Fun4All_TrackAnalysis.C\($nEvents,\"${InClusterDst}\",\"${InClusterPath}\",\"${InSeedDstList}\",\"${InSeedPath}\",\"${OutDir}\",\"${OutPrefix}\",$Index,$StepSize\)
+root.exe -q -b Fun4All_TrackAnalysis.C\($nEvents,\"${InClusterDst}\",\"${InClusterPath}\",\"${InSeedDst}\",\"${InSeedPath}\",\"${OutDir}\",\"${OutPrefix}\",$Index,$StepSize\)
+#root.exe -q -b test.C\($nEvents,\"${InClusterDst}\",\"${InClusterPath}\",\"${InSeedDst}\",\"${InSeedPath}\",\"${OutDir}\",\"${OutPrefix}\",$Index,$StepSize\)
 echo Script done

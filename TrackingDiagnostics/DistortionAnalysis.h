@@ -103,8 +103,8 @@ class DistortionAnalysis : public SubsysReco
 
   bool m_doClusters = false;
   bool m_doHits = false;
-  bool m_doVertexTree = false;
-  bool m_doEventTree = false;
+  bool m_doVertexTree = true;
+  bool m_doEventTree = true;
   bool m_zeroField = false;
   bool m_doFailedSeeds = false;
   bool m_doMatchedOnly = false;

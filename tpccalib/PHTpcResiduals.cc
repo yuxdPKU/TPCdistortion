@@ -109,6 +109,22 @@ namespace
     return out;
   }
 
+  /*
+  std::vector<TrkrDefs::cluskey> get_state_keys(SvtxTrack* track)
+  {
+    std::vector<TrkrDefs::cluskey> out;
+    for (auto state_iter = track->begin_states();
+         state_iter != track->end_states();
+         ++state_iter)
+    {
+      SvtxTrackState* tstate = state_iter->second;
+      auto stateckey = tstate->get_cluskey();
+      out.push_back(stateckey);
+    }
+    return out;
+  }
+  */
+
   /// return number of clusters of a given type that belong to a tracks
   template <int type>
   int count_clusters(const std::vector<TrkrDefs::cluskey>& keys)
@@ -286,6 +302,22 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
   {
     return false;
   }
+
+  /*
+  const auto state_keys(get_state_keys(track));
+  int track_nmvtxstate = count_clusters<TrkrDefs::mvtxId>(state_keys);
+  //int track_ninttstate = count_clusters<TrkrDefs::inttId>(state_keys);
+  int track_ntpcstate = count_clusters<TrkrDefs::tpcId>(state_keys);
+  //int track_ntpotstate = count_clusters<TrkrDefs::micromegasId>(state_keys);
+  if (track_nmvtxstate<3)
+  {
+    return false;
+  }
+  if (track_ntpcstate>30)
+  {
+    return false;
+  }
+  */
 
   if (checkTPOTResidual(track)==false)
   {
@@ -503,10 +535,13 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
       continue;
     }
 
+    const auto layer = TrkrDefs::getLayer(cluskey);
     const auto cluster = m_clusterContainer->findCluster(cluskey);
     const auto surface = m_tGeometry->maps().getSurface(cluskey, cluster);
-    auto result = propagator.propagateTrack(trackParams, surface);
+    //auto result = propagator.propagateTrack(trackParams, surface);//surface aborter
+    auto result = propagator.propagateTrack(trackParams, layer);//layer aborter
 
+    //std::cout<<"layer = "<<layer<<" , propagation failure or not: "<<result.ok()<<std::endl;
     // skip if propagation failed
     if (!result.ok())
     {

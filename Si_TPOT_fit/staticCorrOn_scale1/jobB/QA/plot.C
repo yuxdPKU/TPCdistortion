@@ -54,8 +54,8 @@ void plot()
   //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
   //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
   //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-  int mbdrates[nrun] = {250};
-  int runs[nrun] = {53534};
+  int mbdrates[nrun] = {400};
+  int runs[nrun] = {53877};
 
   for (int k=0; k<nrun; k++)
   {
@@ -63,6 +63,8 @@ void plot()
     TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
     float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
     float tanAlpha, tanBeta;
+    int track_nmvtx, track_nintt, track_ntpc, track_ntpot;
+    int track_nmvtxstate, track_ninttstate, track_ntpcstate, track_ntpotstate;
     intree->SetBranchAddress("dz",&dz);
     intree->SetBranchAddress("drphi",&drphi);
     intree->SetBranchAddress("clusZErr",&clusZErr);
@@ -74,8 +76,16 @@ void plot()
     intree->SetBranchAddress("stateRPhiErr",&stateRPhiErr);
     intree->SetBranchAddress("tanAlpha",&tanAlpha);
     intree->SetBranchAddress("tanBeta",&tanBeta);
+    intree->SetBranchAddress("track_nmvtx",&track_nmvtx);
+    intree->SetBranchAddress("track_nintt",&track_nintt);
+    intree->SetBranchAddress("track_ntpc",&track_ntpc);
+    intree->SetBranchAddress("track_ntpot",&track_ntpot);
+    intree->SetBranchAddress("track_nmvtxstate",&track_nmvtxstate);
+    intree->SetBranchAddress("track_ninttstate",&track_ninttstate);
+    intree->SetBranchAddress("track_ntpcstate",&track_ntpcstate);
+    intree->SetBranchAddress("track_ntpotstate",&track_ntpotstate);
   
-    TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R when |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
+    TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R @ |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
   
     int nevent = intree->GetEntries();
     for (int i=0; i<nevent; i++)
@@ -83,12 +93,16 @@ void plot()
       intree->GetEntry(i);
       double erp = square(clusRPhiErr) + square(stateRPhiErr);
       double ez = square(clusZErr) + square(stateZErr);
-      //if (erp < 0.005) continue; if (ez < 0.01) continue; // bug
       if (sqrt(erp) < 0.005) continue; if (sqrt(ez) < 0.01) continue;
       if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
       if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
+      if (track_nmvtxstate<3) continue;
+      if (track_ninttstate<2) continue;
+      if (track_ntpc<35) continue;
+      if (track_ntpotstate<2) continue;
   
-      if (std::fabs(clusZ)<20) h2_drphi_r->Fill(clusR,drphi);
+      if (std::fabs(clusZ)>=20) continue;
+      h2_drphi_r->Fill(clusR,drphi);
     }
   
     /*
@@ -130,11 +144,13 @@ void fit_gauss(TH2* h, TString name, bool verbose=0)
     if (verbose>0)
     {
       TCanvas *can = new TCanvas("can", "Canvas", 800, 600);
+      can->SetTopMargin(0.12);
       projection->Draw("hist");
       gausFit_full->SetLineColor(kRed);
       gausFit_full->Draw("same");
       gausFit_sub->SetLineColor(kBlue);
       gausFit_sub->Draw("same");
+      myText(0.2,0.95,kBlack,Form("%s , Bin %d R=%d cm",h->GetTitle(),i,(int)h->GetXaxis()->GetBinCenter(i)));
       can->Update();
       can->SaveAs(name + Form(".gausFit_%d.pdf",i));
       delete can;
@@ -165,6 +181,7 @@ void fit_gauss(TH2* h, TString name, bool verbose=0)
   }
 
   TCanvas *c1 = new TCanvas("c1", "Canvas", 800, 600);
+  c1->SetTopMargin(0.12);
   h->Draw("COLZ");
 
   graph_full->SetMarkerStyle(20);
@@ -177,6 +194,8 @@ void fit_gauss(TH2* h, TString name, bool verbose=0)
   TLine *line = new TLine(h->GetXaxis()->GetXmin(), 0, h->GetXaxis()->GetXmax(), 0);
   line->SetLineColor(kRed);
   line->Draw();
+
+  myText(0.4,0.95,kBlack,Form("Rd#phi vs. R @ |Z|<20"));
 
   c1->Update();
   c1->SaveAs(name);

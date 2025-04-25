@@ -37,11 +37,12 @@ class QAG4SimulationDistortions : public SubsysReco
   }
 
   std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track);
+  std::vector<TrkrDefs::cluskey> get_state_keys(SvtxTrack* track);
   bool checkTrack(SvtxTrack* track);
   bool checkTPOTResidual(SvtxTrack* track);
   float calc_dedx(TrackSeed* tpcseed, TrkrClusterContainer* clustermap, PHG4TpcCylinderGeomContainer* tpcGeom);
   void clearVector();
-  void get_Tpot_info(SvtxTrack* track);
+  void get_MvtxInttTpot_info(SvtxTrack* track);
   SvtxTrackMap* m_trackMap = nullptr;
   TrkrClusterContainer* m_clusterContainer = nullptr;
   ActsGeometry* m_tGeometry = nullptr;
@@ -73,9 +74,49 @@ class QAG4SimulationDistortions : public SubsysReco
   float m_statePz = NAN;
   float m_trackPt = NAN;
   float m_trackdEdx = NAN;
+  int m_track_nmvtx = 0;
+  int m_track_nmvtxstate = 0;
+  int m_track_nintt = 0;
+  int m_track_ninttstate = 0;
+  int m_track_ntpc = 0;
+  int m_track_ntpcstate = 0;
+  int m_track_ntpot = 0;
+  int m_track_ntpotstate = 0;
   int m_charge = -10;
   int m_crossing = -10;
 
+  std::vector<TrkrDefs::cluskey> m_cluskey_mvtx;
+  std::vector<int> m_layer_mvtx;
+  std::vector<float> m_sclusgx_mvtx;
+  std::vector<float> m_sclusgy_mvtx;
+  std::vector<float> m_sclusgz_mvtx;
+  std::vector<float> m_sclusgr_mvtx;
+  std::vector<float> m_sclusphi_mvtx;
+  std::vector<float> m_scluseta_mvtx;
+  std::vector<float> m_stategx_mvtx;
+  std::vector<float> m_stategy_mvtx;
+  std::vector<float> m_stategz_mvtx;
+  std::vector<float> m_stategr_mvtx;
+  std::vector<float> m_statephi_mvtx;
+  std::vector<float> m_stateeta_mvtx;
+
+  std::vector<TrkrDefs::cluskey> m_cluskey_intt;
+  std::vector<int> m_layer_intt;
+  std::vector<float> m_sclusgx_intt;
+  std::vector<float> m_sclusgy_intt;
+  std::vector<float> m_sclusgz_intt;
+  std::vector<float> m_sclusgr_intt;
+  std::vector<float> m_sclusphi_intt;
+  std::vector<float> m_scluseta_intt;
+  std::vector<float> m_stategx_intt;
+  std::vector<float> m_stategy_intt;
+  std::vector<float> m_stategz_intt;
+  std::vector<float> m_stategr_intt;
+  std::vector<float> m_statephi_intt;
+  std::vector<float> m_stateeta_intt;
+
+  std::vector<TrkrDefs::cluskey> m_cluskey_tpot;
+  std::vector<int> m_layer_tpot;
   std::vector<int> m_segtype_tpot;
   std::vector<int> m_tileid_tpot;
   std::vector<float> m_sclusgx_tpot;
@@ -84,6 +125,12 @@ class QAG4SimulationDistortions : public SubsysReco
   std::vector<float> m_sclusgr_tpot;
   std::vector<float> m_sclusphi_tpot;
   std::vector<float> m_scluseta_tpot;
+  std::vector<float> m_stategx_tpot;
+  std::vector<float> m_stategy_tpot;
+  std::vector<float> m_stategz_tpot;
+  std::vector<float> m_stategr_tpot;
+  std::vector<float> m_statephi_tpot;
+  std::vector<float> m_stateeta_tpot;
 
   TrkrDefs::cluskey m_cluskey = TrkrDefs::CLUSKEYMAX;
 };

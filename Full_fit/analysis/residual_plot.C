@@ -9,14 +9,18 @@ void residual_plot()
     TCut cut_m=cut + "charge<0";
 
     int runnumber=53534;
-    TString type="staticCorrOn_scale1_XudongMap";
+    //TString type="staticCorrOn_scale1_XudongMap";
     //TString type="staticCorrOn_scale1_BenMap";
     //TString type="staticCorrOn_scale1_noavgCorr";
+    //TString type="staticCorrOn_scale1_BenMap_Misalignment1";
+    //TString type="staticCorrOn_scale1_BenMap_Misalignment100";
+    TString type="staticCorrOn_scale1_BenMap_Misalignment1_blowupTPC";
+    //TString type="staticCorrOn_scale1_BenMap_newTPOTalignment";
 
     TString outpath_prefix=Form("/sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/") + type + Form("/");
 
     TChain* chain = new TChain("residualtree");
-    chain->Add(Form("/sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/") + type + Form("/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runnumber,runnumber));
+    chain->Add(Form("/sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/") + type + Form("/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runnumber,runnumber));
 
 /*
     TH2* h2_dphi_phi = new TH2F("h2_dphi_phi","",40,-0.2,0.2,100,-3.15,3.15);
@@ -59,7 +63,8 @@ void residual_plot()
 */
 
     // cluster local dx versus layer
-    TH2* h2_clus_dx_layer = new TH2F("h2_clus_dx_layer","",60,0,60,100,-1.5,1.5);
+    TH2* h2_clus_dx_layer = new TH2F("h2_clus_dx_layer","",60,0,60,500,-0.5,0.5);
+    //TH2* h2_clus_dx_layer = new TH2F("h2_clus_dx_layer","",60,0,60,500,-0.01,0.01); //for mvtx
     chain->Draw("(statelx-cluslx):cluslayer>>h2_clus_dx_layer",cut);
     makecanvas2d(h2_clus_dx_layer,outpath_prefix+Form("figure/clus_dx_layer.pdf"),Form("Layer"),Form("(statelx-cluslx) [cm]"),true);
 
@@ -149,6 +154,7 @@ void makecanvas2d(TH2* h2, TString name, TString xtitle, TString ytitle, bool lo
     h2->GetYaxis()->SetTitle(ytitle);
     h2->Draw("colz");
 
+    /*
     Int_t nBinsX = h2->GetXaxis()->GetNbins();
     TH1D* h1_projY = new TH1D(Form("%s_projY",h2->GetName()), "Projection Y", nBinsX, h2->GetXaxis()->GetXmin(), h2->GetXaxis()->GetXmax());
 
@@ -156,11 +162,21 @@ void makecanvas2d(TH2* h2, TString name, TString xtitle, TString ytitle, bool lo
         TH1D* h1_temp = h2->ProjectionY("_py", i, i);
         Double_t meanY = h1_temp->GetMean();
         Double_t meanErrorY = h1_temp->GetMeanError();
+	//std::cout<<"sigma for bin "<<i<<" = "<<h1_temp->GetStdDev()<<std::endl;
         h1_projY->SetBinContent(i, meanY);
         h1_projY->SetBinError(i, meanErrorY);
         delete h1_temp;
     }
     h1_projY->Draw("E1,same");
+    */
+
+    h2->FitSlicesY();
+    TH1 *wid = (TH1*)gDirectory->Get(Form("%s_2",h2->GetName()));
+    TH1 *mean = (TH1*)gDirectory->Get(Form("%s_1",h2->GetName()));
+    wid->SetLineColor(kRed);
+    wid->Draw("same");
+    mean->SetLineColor(kBlack);
+    mean->Draw("same");
 
     can->SaveAs(name);
     delete can;

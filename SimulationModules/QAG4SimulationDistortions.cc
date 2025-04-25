@@ -18,6 +18,7 @@
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainer.h>
 #include <trackbase/TrkrDefs.h>
+#include <trackbase/MvtxDefs.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrackState.h>
@@ -181,7 +182,47 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
   t->Branch("charge", &m_charge, "charge/I");
   t->Branch("crossing", &m_crossing, "crossing/I");
   t->Branch("trackdEdx", &m_trackdEdx, "trackdEdx/F");
+  t->Branch("track_nmvtx", &m_track_nmvtx, "track_nmvtx/I");
+  t->Branch("track_nmvtxstate", &m_track_nmvtxstate, "track_nmvtxstate/I");
+  t->Branch("track_nintt", &m_track_nintt, "track_nintt/I");
+  t->Branch("track_ninttstate", &m_track_ninttstate, "track_ninttstate/I");
+  t->Branch("track_ntpc", &m_track_ntpc, "track_ntpc/I");
+  t->Branch("track_ntpcstate", &m_track_ntpcstate, "track_ntpcstate/I");
+  t->Branch("track_ntpot", &m_track_ntpot, "track_ntpot/I");
+  t->Branch("track_ntpotstate", &m_track_ntpotstate, "track_ntpotstate/I");
 
+  t->Branch("cluskey_mvtx", &m_cluskey_mvtx);
+  t->Branch("layer_mvtx", &m_layer_mvtx);
+  t->Branch("sclusgx_mvtx", &m_sclusgx_mvtx);
+  t->Branch("sclusgy_mvtx", &m_sclusgy_mvtx);
+  t->Branch("sclusgz_mvtx", &m_sclusgz_mvtx);
+  t->Branch("sclusgr_mvtx", &m_sclusgr_mvtx);
+  t->Branch("sclusphi_mvtx", &m_sclusphi_mvtx);
+  t->Branch("scluseta_mvtx", &m_scluseta_mvtx);
+  t->Branch("stategx_mvtx", &m_stategx_mvtx);
+  t->Branch("stategy_mvtx", &m_stategy_mvtx);
+  t->Branch("stategz_mvtx", &m_stategz_mvtx);
+  t->Branch("stategr_mvtx", &m_stategr_mvtx);
+  t->Branch("statephi_mvtx", &m_statephi_mvtx);
+  t->Branch("stateeta_mvtx", &m_stateeta_mvtx);
+
+  t->Branch("cluskey_intt", &m_cluskey_intt);
+  t->Branch("layer_intt", &m_layer_intt);
+  t->Branch("sclusgx_intt", &m_sclusgx_intt);
+  t->Branch("sclusgy_intt", &m_sclusgy_intt);
+  t->Branch("sclusgz_intt", &m_sclusgz_intt);
+  t->Branch("sclusgr_intt", &m_sclusgr_intt);
+  t->Branch("sclusphi_intt", &m_sclusphi_intt);
+  t->Branch("scluseta_intt", &m_scluseta_intt);
+  t->Branch("stategx_intt", &m_stategx_intt);
+  t->Branch("stategy_intt", &m_stategy_intt);
+  t->Branch("stategz_intt", &m_stategz_intt);
+  t->Branch("stategr_intt", &m_stategr_intt);
+  t->Branch("statephi_intt", &m_statephi_intt);
+  t->Branch("stateeta_intt", &m_stateeta_intt);
+
+  t->Branch("cluskey_tpot", &m_cluskey_tpot);
+  t->Branch("layer_tpot", &m_layer_tpot);
   t->Branch("segtype_tpot", &m_segtype_tpot);
   t->Branch("tileid_tpot", &m_tileid_tpot);
   t->Branch("sclusgx_tpot", &m_sclusgx_tpot);
@@ -190,6 +231,12 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
   t->Branch("sclusgr_tpot", &m_sclusgr_tpot);
   t->Branch("sclusphi_tpot", &m_sclusphi_tpot);
   t->Branch("scluseta_tpot", &m_scluseta_tpot);
+  t->Branch("stategx_tpot", &m_stategx_tpot);
+  t->Branch("stategy_tpot", &m_stategy_tpot);
+  t->Branch("stategz_tpot", &m_stategz_tpot);
+  t->Branch("stategr_tpot", &m_stategr_tpot);
+  t->Branch("statephi_tpot", &m_statephi_tpot);
+  t->Branch("stateeta_tpot", &m_stateeta_tpot);
 
   hm->registerHisto(t);
 
@@ -305,7 +352,7 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
       continue;
     }
 
-    get_Tpot_info(track);
+    get_MvtxInttTpot_info(track);
 
     for (auto iter = track->begin_states(); iter != track->end_states(); ++iter)
     {
@@ -412,6 +459,17 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
       m_crossing = track->get_crossing();
       m_trackdEdx = calc_dedx(tpcSeed, m_clusterContainer, m_tpcGeom);
 
+      const auto cluster_keys(get_cluster_keys(track));
+      m_track_nmvtx = count_clusters<TrkrDefs::mvtxId>(cluster_keys);
+      m_track_nintt = count_clusters<TrkrDefs::inttId>(cluster_keys);
+      m_track_ntpc = count_clusters<TrkrDefs::tpcId>(cluster_keys);
+      m_track_ntpot = count_clusters<TrkrDefs::micromegasId>(cluster_keys);
+      const auto state_keys(get_state_keys(track));
+      m_track_nmvtxstate = count_clusters<TrkrDefs::mvtxId>(state_keys);
+      m_track_ninttstate = count_clusters<TrkrDefs::inttId>(state_keys);
+      m_track_ntpcstate = count_clusters<TrkrDefs::tpcId>(state_keys);
+      m_track_ntpotstate = count_clusters<TrkrDefs::micromegasId>(state_keys);
+
       t_tree->Fill();
     }
     int nstates = track->size_states();
@@ -450,6 +508,13 @@ bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
   {
     return false;
   }
+
+  const auto state_keys(get_state_keys(track));
+  if (count_clusters<TrkrDefs::mvtxId>(state_keys) < 3)
+  {
+    return false;
+  }
+  //std::cout<<"event = "<<m_event<<" , tpc nclusters = "<<count_clusters<TrkrDefs::tpcId>(cluster_keys)<<" , nstates = "<<count_clusters<TrkrDefs::tpcId>(state_keys)<<std::endl;
 
   if (checkTPOTResidual(track)==false)
   {
@@ -588,8 +653,54 @@ std::vector<TrkrDefs::cluskey> QAG4SimulationDistortions::get_cluster_keys(SvtxT
   return out;
 }
 
+std::vector<TrkrDefs::cluskey> QAG4SimulationDistortions::get_state_keys(SvtxTrack* track)
+{
+  std::vector<TrkrDefs::cluskey> out;
+  for (auto state_iter = track->begin_states();
+       state_iter != track->end_states();
+       ++state_iter)
+  {
+    SvtxTrackState* tstate = state_iter->second;
+    auto stateckey = tstate->get_cluskey();
+    out.push_back(stateckey);
+  }
+  return out;
+}
+
 void QAG4SimulationDistortions::clearVector()
 {
+  m_cluskey_mvtx.clear();
+  m_layer_mvtx.clear();
+  m_sclusgx_mvtx.clear();
+  m_sclusgy_mvtx.clear();
+  m_sclusgz_mvtx.clear();
+  m_sclusgr_mvtx.clear();
+  m_sclusphi_mvtx.clear();
+  m_scluseta_mvtx.clear();
+  m_stategx_mvtx.clear();
+  m_stategy_mvtx.clear();
+  m_stategz_mvtx.clear();
+  m_stategr_mvtx.clear();
+  m_statephi_mvtx.clear();
+  m_stateeta_mvtx.clear();
+
+  m_cluskey_intt.clear();
+  m_layer_intt.clear();
+  m_sclusgx_intt.clear();
+  m_sclusgy_intt.clear();
+  m_sclusgz_intt.clear();
+  m_sclusgr_intt.clear();
+  m_sclusphi_intt.clear();
+  m_scluseta_intt.clear();
+  m_stategx_intt.clear();
+  m_stategy_intt.clear();
+  m_stategz_intt.clear();
+  m_stategr_intt.clear();
+  m_statephi_intt.clear();
+  m_stateeta_intt.clear();
+
+  m_cluskey_tpot.clear();
+  m_layer_tpot.clear();
   m_segtype_tpot.clear();
   m_tileid_tpot.clear();
   m_sclusgx_tpot.clear();
@@ -598,18 +709,22 @@ void QAG4SimulationDistortions::clearVector()
   m_sclusgr_tpot.clear();
   m_sclusphi_tpot.clear();
   m_scluseta_tpot.clear();
+  m_stategx_tpot.clear();
+  m_stategy_tpot.clear();
+  m_stategz_tpot.clear();
+  m_stategr_tpot.clear();
+  m_statephi_tpot.clear();
+  m_stateeta_tpot.clear();
 }
 
-void QAG4SimulationDistortions::get_Tpot_info(SvtxTrack* track)
+void QAG4SimulationDistortions::get_MvtxInttTpot_info(SvtxTrack* track)
 {
   clearVector();
   for (const auto& ckey : get_cluster_keys(track))
   {
-    if (TrkrDefs::getTrkrId(ckey)!=TrkrDefs::micromegasId) continue;
     auto cluster = m_clusterContainer->findCluster(ckey);
 
-    int m_segtype = (int) MicromegasDefs::getSegmentationType(ckey);
-    int m_tileid = MicromegasDefs::getTileId(ckey);
+    unsigned int layer = TrkrDefs::getLayer(ckey);
     Acts::Vector3 glob = m_tGeometry->getGlobalPosition(ckey, cluster);
     float m_sclusgx = glob.x();
     float m_sclusgy = glob.y();
@@ -617,14 +732,93 @@ void QAG4SimulationDistortions::get_Tpot_info(SvtxTrack* track)
     float m_sclusgr = get_r(m_sclusgx, m_sclusgy);
     float m_sclusphi = atan2(glob.y(), glob.x());
     float m_scluseta = acos(glob.z() / std::sqrt(square(glob.x()) + square(glob.y()) + square(glob.z())));
-    m_segtype_tpot.push_back(m_segtype);
-    m_tileid_tpot.push_back(m_tileid);
-    m_sclusgx_tpot.push_back(m_sclusgx);
-    m_sclusgy_tpot.push_back(m_sclusgy);
-    m_sclusgz_tpot.push_back(m_sclusgz);
-    m_sclusgr_tpot.push_back(m_sclusgr);
-    m_sclusphi_tpot.push_back(m_sclusphi);
-    m_scluseta_tpot.push_back(m_scluseta);
+
+    SvtxTrackState* state = nullptr;
+    for (auto state_iter = track->begin_states();
+         state_iter != track->end_states();
+         ++state_iter)
+    {
+      SvtxTrackState* tstate = state_iter->second;
+      auto stateckey = tstate->get_cluskey();
+      if (stateckey == ckey)
+      {
+        state = tstate;
+        break;
+      }
+    }
+
+    float m_stategx = NAN;
+    float m_stategy = NAN;
+    float m_stategz = NAN;
+    float m_stategr = NAN;
+    float m_statephi = NAN;
+    float m_stateeta = NAN;
+    if (state)
+    {
+      Acts::Vector3 stateglob(state->get_x(), state->get_y(), state->get_z());
+      m_stategx = stateglob.x();
+      m_stategy = stateglob.y();
+      m_stategz = stateglob.z();
+      m_stategr = get_r(m_stategx, m_stategy);
+      m_statephi = atan2(stateglob.y(), stateglob.x());
+      m_stateeta = acos(stateglob.z() / std::sqrt(square(stateglob.x()) + square(stateglob.y()) + square(stateglob.z())));
+    }
+
+    if (TrkrDefs::getTrkrId(ckey)==TrkrDefs::mvtxId)
+    {
+      m_cluskey_mvtx.push_back(ckey);
+      m_layer_mvtx.push_back(layer);
+      m_sclusgx_mvtx.push_back(m_sclusgx);
+      m_sclusgy_mvtx.push_back(m_sclusgy);
+      m_sclusgz_mvtx.push_back(m_sclusgz);
+      m_sclusgr_mvtx.push_back(m_sclusgr);
+      m_sclusphi_mvtx.push_back(m_sclusphi);
+      m_scluseta_mvtx.push_back(m_scluseta);
+      m_stategx_mvtx.push_back(m_stategx);
+      m_stategy_mvtx.push_back(m_stategy);
+      m_stategz_mvtx.push_back(m_stategz);
+      m_stategr_mvtx.push_back(m_stategr);
+      m_statephi_mvtx.push_back(m_statephi);
+      m_stateeta_mvtx.push_back(m_stateeta);
+    }
+    else if (TrkrDefs::getTrkrId(ckey)==TrkrDefs::inttId)
+    {
+      m_cluskey_intt.push_back(ckey);
+      m_layer_intt.push_back(layer);
+      m_sclusgx_intt.push_back(m_sclusgx);
+      m_sclusgy_intt.push_back(m_sclusgy);
+      m_sclusgz_intt.push_back(m_sclusgz);
+      m_sclusgr_intt.push_back(m_sclusgr);
+      m_sclusphi_intt.push_back(m_sclusphi);
+      m_scluseta_intt.push_back(m_scluseta);
+      m_stategx_intt.push_back(m_stategx);
+      m_stategy_intt.push_back(m_stategy);
+      m_stategz_intt.push_back(m_stategz);
+      m_stategr_intt.push_back(m_stategr);
+      m_statephi_intt.push_back(m_statephi);
+      m_stateeta_intt.push_back(m_stateeta);
+    }
+    else if (TrkrDefs::getTrkrId(ckey)==TrkrDefs::micromegasId)
+    {
+      int m_segtype = (int) MicromegasDefs::getSegmentationType(ckey);
+      int m_tileid = MicromegasDefs::getTileId(ckey);
+      m_cluskey_tpot.push_back(ckey);
+      m_layer_tpot.push_back(layer);
+      m_segtype_tpot.push_back(m_segtype);
+      m_tileid_tpot.push_back(m_tileid);
+      m_sclusgx_tpot.push_back(m_sclusgx);
+      m_sclusgy_tpot.push_back(m_sclusgy);
+      m_sclusgz_tpot.push_back(m_sclusgz);
+      m_sclusgr_tpot.push_back(m_sclusgr);
+      m_sclusphi_tpot.push_back(m_sclusphi);
+      m_scluseta_tpot.push_back(m_scluseta);
+      m_stategx_tpot.push_back(m_stategx);
+      m_stategy_tpot.push_back(m_stategy);
+      m_stategz_tpot.push_back(m_stategz);
+      m_stategr_tpot.push_back(m_stategr);
+      m_statephi_tpot.push_back(m_statephi);
+      m_stateeta_tpot.push_back(m_stateeta);
+    }
   }
 }
 

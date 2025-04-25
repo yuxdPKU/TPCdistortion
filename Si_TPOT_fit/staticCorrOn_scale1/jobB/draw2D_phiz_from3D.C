@@ -62,8 +62,8 @@ const int nrun = 1;
 //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
 //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
 //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-int mbdrates[nrun] = {250};
-int runs[nrun] = {53534};
+int mbdrates[nrun] = {400};
+int runs[nrun] = {53877};
 
 TFile* file_3D_map[nrun];
 TH3 *h_N_prz_pos[nrun], *h_R_prz_pos[nrun], *h_P_prz_pos[nrun], *h_Z_prz_pos[nrun], *h_RP_prz_pos[nrun];
