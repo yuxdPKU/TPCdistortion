@@ -64,7 +64,6 @@ void plot()
     float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
     float tanAlpha, tanBeta;
     float trackPt;
-    int layer;
     int track_nmvtx, track_nintt, track_ntpc, track_ntpot;
     int track_nmvtxstate, track_ninttstate, track_ntpcstate, track_ntpotstate;
     intree->SetBranchAddress("dz",&dz);
@@ -79,7 +78,6 @@ void plot()
     intree->SetBranchAddress("tanAlpha",&tanAlpha);
     intree->SetBranchAddress("trackPt",&trackPt);
     intree->SetBranchAddress("tanBeta",&tanBeta);
-    intree->SetBranchAddress("layer",&layer);
     intree->SetBranchAddress("track_nmvtx",&track_nmvtx);
     intree->SetBranchAddress("track_nintt",&track_nintt);
     intree->SetBranchAddress("track_ntpc",&track_ntpc);
@@ -91,19 +89,12 @@ void plot()
   
     TH2* h2_drphi_r = new TH2F("h2_drphi_r","Rd#phi vs. R @ |Z|<20;R (cm);Rd#phi (cm)",16,20,78,50,-2,2);
   
-    int layer_last=0;
-    int layer_now=0;
-    std::vector<double> vec_clusZ, vec_clusR, vec_drphi;
-    vec_clusZ.clear();
-    vec_clusR.clear();
-    vec_drphi.clear();
     int nevent = intree->GetEntries();
     for (int i=0; i<nevent; i++)
     {
       intree->GetEntry(i);
       double erp = square(clusRPhiErr) + square(stateRPhiErr);
       double ez = square(clusZErr) + square(stateZErr);
-      layer_now = layer;
       if (sqrt(erp) < 0.005) continue; if (sqrt(ez) < 0.01) continue;
       if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
       if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
@@ -113,35 +104,10 @@ void plot()
       if (track_ntpotstate<2) continue;
       //if (trackPt<1) continue;
   
-      if (std::fabs(clusZ)>=20) continue;
+      //if (std::fabs(clusZ)>=20) continue;
       //if (!(clusZ>0 && clusZ<10)) continue;
-      //if (!(clusZ>-10 && clusZ<0)) continue;
-      if (layer_now>layer_last)
-      {
-	// still the same track
-        vec_clusZ.push_back(clusZ);
-        vec_clusR.push_back(clusR);
-        vec_drphi.push_back(drphi);
-      }
-      else
-      {
-        // another track
-	int nclus = vec_clusR.size();
-	if (vec_clusZ[0]*vec_clusZ[nclus-1]>0)
-	{
-	  for (int ii=0; ii<nclus; ii++)
-	  {
-	    h2_drphi_r->Fill(vec_clusR[ii],vec_drphi[ii]);
-	  }
-	}
-	vec_clusZ.clear();
-	vec_clusR.clear();
-	vec_drphi.clear();
-        vec_clusZ.push_back(clusZ);
-        vec_clusR.push_back(clusR);
-        vec_drphi.push_back(drphi);
-      }
-      layer_last = layer_now;
+      if (!(clusZ>-10 && clusZ<0)) continue;
+      h2_drphi_r->Fill(clusR,drphi);
     }
   
     /*

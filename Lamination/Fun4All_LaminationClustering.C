@@ -108,7 +108,17 @@ void Fun4All_LaminationClustering(
   G4MAGNET::magfield_rescale = 1;
   TrackingInit();
   
-  Tpc_HitUnpacking();
+  ostringstream ebdcname;
+  for(int ebdc = 0; ebdc < 24; ebdc++)
+  {
+    ebdcname.str("");
+    if(ebdc < 10)
+    {
+      ebdcname<<"0";
+    }
+    ebdcname<<ebdc;
+    Tpc_HitUnpacking(ebdcname.str());
+  }
   
   Tpc_LaserEventIdentifying();
 

@@ -44,7 +44,8 @@ void Fun4All_LaminationFitting(
     const int runnumber = 54966,
     const std::string &filelist = "lamination_dst_list_54966",
     const std::string &outfilename = "LAMINATION_Fit",
-    const std::string &outdir = "./"
+    const std::string &outdir = "./",
+    bool ppmode = false
 )
 {
   auto se = Fun4AllServer::instance();
@@ -58,7 +59,7 @@ void Fun4All_LaminationFitting(
   //! flags to set
   Enable::QA = false;
   TRACKING::tpc_zero_supp = true;
-  TRACKING::pp_mode = false;
+  TRACKING::pp_mode = ppmode;
 
   TString outfile = outdir + outfilename + "_" + runnumber;
   std::cout<<"outfile "<<outfile<<std::endl;

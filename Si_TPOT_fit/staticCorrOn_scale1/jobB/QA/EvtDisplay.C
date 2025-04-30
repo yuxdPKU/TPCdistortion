@@ -33,10 +33,9 @@ void EvtDisplay()
 
   int runno=53877;
   int segmentno=0;
-  int eventno=1041;
+  int eventno=4820;
 
   TFile* infile = new TFile(Form("~/workarea/TPCdistortion/Si_TPOT_fit/staticCorrOn_scale1/Reconstructed/%d/clusters_seeds_%d-%d.root_qa.root",runno,runno,segmentno));
-  //TFile* infile = new TFile(Form("~/workarea/TPCdistortion/Si_TPOT_fit/staticCorrOn_scale1/root/Reconstructed/%d/clusters_seeds_%d-%d.root_qa.root",runno,runno,segmentno));
   TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
   float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
   float stateR, statePhi;
@@ -104,8 +103,8 @@ void EvtDisplay()
   intree->SetBranchAddress("stategy_tpot",&stategy_tpot);
   intree->SetBranchAddress("stategr_tpot",&stategr_tpot);
   intree->SetBranchAddress("statephi_tpot",&statephi_tpot);
-  std::vector<float> vec_clus_R, vec_clus_RPhi, vec_clus_x, vec_clus_y;
-  std::vector<float> vec_state_R, vec_state_RPhi, vec_state_x, vec_state_y;
+  std::vector<float> vec_clus_R, vec_clus_RPhi, vec_clus_x, vec_clus_y, vec_clus_z;
+  std::vector<float> vec_state_R, vec_state_RPhi, vec_state_x, vec_state_y, vec_state_z;
   std::vector<float> vec_clusR_statePhi, vec_state_x2, vec_state_y2;
   std::vector<float> vec_drphi;
 
@@ -113,10 +112,12 @@ void EvtDisplay()
   vec_clus_RPhi.clear();
   vec_clus_x.clear();
   vec_clus_y.clear();
+  vec_clus_z.clear();
   vec_state_R.clear();
   vec_state_RPhi.clear();
   vec_state_x.clear();
   vec_state_y.clear();
+  vec_state_z.clear();
   vec_clusR_statePhi.clear();
   vec_state_x2.clear();
   vec_state_y2.clear();

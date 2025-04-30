@@ -38,29 +38,35 @@ Rank=CPU_Speed
 
 # Used to give jobs a directory with respect to file input 
 # and output.
-Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Lamination
+Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/staticCorrOn_scale1_XudongMap_3
 
 # The executable we want to run.
-Executable     = $(Initialdir)/run_laminationfit.sh
+Executable     = $(Initialdir)/run_seeddst.sh
 
-Nevent         = -1
-RunNumber      = 54967
-FileList       = $(Initialdir)/lamination_dst_list_$(RunNumber)
-OutFileName    = LAMINATION_FITTING
-OutDir         = /sphenix/u/xyu3/hftg01/Lamination_DST/LaminationFitOut/
-PPMode         = false
+Nevent         = 10000
+RunNumber      = 53877
+Segment        = $(Process)
+ClusterFileName= DST_TRKR_CLUSTER_run2pp_ana466_2024p012_v001-$INT(RunNumber,%08d)-$INT(Segment,%05d).root
+ClusterFilePath= /sphenix/lustre01/sphnxpro/production/run2pp/physics/ana466_2024p012_v001/DST_TRKR_CLUSTER/run_00053800_00053900/dst/
+SeedFileName   = DST_TRKR_SEED_run2pp_ana475_2024p018_v001-$INT(RunNumber,%08d)-$INT(Segment,%05d).root
+SeedFilePath   =/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana475_2024p018_v001/DST_TRKR_SEED/run_00053800_00053900/dst/ 
+OutDir         = $(Initialdir)/
+OutPrefix      = clusters_seeds
+Index          = 0
+StepSize       = 0
 
 # The argument to pass to the executable.
-Arguments      = "$(Nevent) $(RunNumber) $(FileList) $(OutFileName) $(OutDir) $(PPMode)"
+#tracking firt then calo, only one tracking file
+Arguments      = "$(Nevent) $(ClusterFileName) $(ClusterFilePath) $(SeedFileName) $(SeedFilePath) $(OutDir) $(OutPrefix) $(Index) $(StepSize)"
 
 # The job's stdout is sent to this file.
-Output         = $(Initialdir)/log/job-LaminationFitting-$(RunNumber).$(Cluster).$(Process).out
+Output         = $(Initialdir)/log/job-Data-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).out
 
 # The job's stderr is sent to this file.
-Error          = $(Initialdir)/log/job-LaminationFitting-$(RunNumber).$(Cluster).$(Process).err
+Error          = $(Initialdir)/log/job-Data-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).err
 
 # The condor log file for this job, useful when debugging.
-Log            = $(Initialdir)/log/job-LaminationFitting-$(RunNumber).$(Cluster).$(Process).log
+Log            = $(Initialdir)/log/job-Data-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).log
 
 #should_transfer_files   = YES
 #when_to_transfer_output = ON_EXIT_OR_EVICT
@@ -75,4 +81,5 @@ on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)
 # job.  If a number is placed after the command (i.e. Queue 15)
 # then the job will be submitted N times.  Use the $(Process)
 # macro to make your input/output and log files unique.
-Queue 1
+#Queue Segment from $(Initialdir)/$(RunNumber)_seg.txt
+Queue 2628

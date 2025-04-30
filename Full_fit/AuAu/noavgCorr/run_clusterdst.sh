@@ -18,11 +18,12 @@ this_dir=`dirname $this_script`
 echo running: $this_script $*
 
 nEvents=$1
-runnumber=$2
-filelist=$3
-outfilename=$4
-outdir=$5
-ppmode=$6
+InClusterDst=$2
+InClusterPath=$3
+OutDir=$4
+OutPrefix=$5
+Index=$6
+StepSize=$7
 
-root.exe -q -b Fun4All_LaminationFitting.C\($nEvents,$runnumber,\"${filelist}\",\"${outfilename}\",\"${outdir}\",$ppmode\)
+root.exe -q -b Fun4All_TrackSeeding.C\($nEvents,\"${InClusterDst}\",\"${InClusterPath}\",\"${OutDir}\",\"${OutPrefix}\",$Index,$StepSize\)
 echo Script done

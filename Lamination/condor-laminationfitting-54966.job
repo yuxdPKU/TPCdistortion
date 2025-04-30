@@ -48,9 +48,10 @@ RunNumber      = 54966
 FileList       = $(Initialdir)/lamination_dst_list_$(RunNumber)
 OutFileName    = LAMINATION_FITTING
 OutDir         = /sphenix/u/xyu3/hftg01/Lamination_DST/LaminationFitOut/
+PPMode         = false
 
 # The argument to pass to the executable.
-Arguments      = "$(Nevent) $(RunNumber) $(FileList) $(OutFileName) $(OutDir)"
+Arguments      = "$(Nevent) $(RunNumber) $(FileList) $(OutFileName) $(OutDir) $(PPMode)"
 
 # The job's stdout is sent to this file.
 Output         = $(Initialdir)/log/job-LaminationFitting-$(RunNumber).$(Cluster).$(Process).out

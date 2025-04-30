@@ -44,11 +44,11 @@ Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Lamination
 Executable     = $(Initialdir)/run_laminationfit.sh
 
 Nevent         = -1
-RunNumber      = 54967
+RunNumber      = 53877
 FileList       = $(Initialdir)/lamination_dst_list_$(RunNumber)
 OutFileName    = LAMINATION_FITTING
 OutDir         = /sphenix/u/xyu3/hftg01/Lamination_DST/LaminationFitOut/
-PPMode         = false
+PPMode         = true
 
 # The argument to pass to the executable.
 Arguments      = "$(Nevent) $(RunNumber) $(FileList) $(OutFileName) $(OutDir) $(PPMode)"
