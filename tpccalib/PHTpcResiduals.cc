@@ -771,9 +771,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
       // Fill distortion matrices
       if (clusZ<0)
       {
-        m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 0, 0, clusR / erp);
+        m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 0, 0, square(clusR) / erp);
         m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 0, 1, 0);
-        m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 0, 2, trackAlpha / erp);
+        m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 0, 2, clusR*trackAlpha / erp);
 
         m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 1, 0, 0);
         m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 1, 1, 1. / ez);
@@ -783,7 +783,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 2, 1, trackBeta / ez);
         m_matrix_container_1D_layer_negz->add_to_lhs(index_1D_layer, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-        m_matrix_container_1D_layer_negz->add_to_rhs(index_1D_layer, 0, drphi / erp);
+        m_matrix_container_1D_layer_negz->add_to_rhs(index_1D_layer, 0, clusR*drphi / erp);
         m_matrix_container_1D_layer_negz->add_to_rhs(index_1D_layer, 1, dz / ez);
         m_matrix_container_1D_layer_negz->add_to_rhs(index_1D_layer, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
@@ -791,9 +791,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_layer_negz->add_to_entries(index_1D_layer);
 
 
-        m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 0, 0, clusR / erp);
+        m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 0, 0, square(clusR) / erp);
         m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 0, 1, 0);
-        m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 0, 2, trackAlpha / erp);
+        m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 0, 2, clusR*trackAlpha / erp);
 
         m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 1, 0, 0);
         m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 1, 1, 1. / ez);
@@ -803,7 +803,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 2, 1, trackBeta / ez);
         m_matrix_container_1D_radius_negz->add_to_lhs(index_1D_radius, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-        m_matrix_container_1D_radius_negz->add_to_rhs(index_1D_radius, 0, drphi / erp);
+        m_matrix_container_1D_radius_negz->add_to_rhs(index_1D_radius, 0, clusR*drphi / erp);
         m_matrix_container_1D_radius_negz->add_to_rhs(index_1D_radius, 1, dz / ez);
         m_matrix_container_1D_radius_negz->add_to_rhs(index_1D_radius, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
@@ -812,9 +812,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
       }
       else if (clusZ>=0)
       {
-        m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 0, 0, clusR / erp);
+        m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 0, 0, square(clusR) / erp);
         m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 0, 1, 0);
-        m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 0, 2, trackAlpha / erp);
+        m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 0, 2, clusR*trackAlpha / erp);
 
         m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 1, 0, 0);
         m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 1, 1, 1. / ez);
@@ -824,7 +824,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 2, 1, trackBeta / ez);
         m_matrix_container_1D_layer_posz->add_to_lhs(index_1D_layer, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-        m_matrix_container_1D_layer_posz->add_to_rhs(index_1D_layer, 0, drphi / erp);
+        m_matrix_container_1D_layer_posz->add_to_rhs(index_1D_layer, 0, clusR*drphi / erp);
         m_matrix_container_1D_layer_posz->add_to_rhs(index_1D_layer, 1, dz / ez);
         m_matrix_container_1D_layer_posz->add_to_rhs(index_1D_layer, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
@@ -832,9 +832,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_layer_posz->add_to_entries(index_1D_layer);
 
 
-        m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 0, 0, clusR / erp);
+        m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 0, 0, square(clusR) / erp);
         m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 0, 1, 0);
-        m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 0, 2, trackAlpha / erp);
+        m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 0, 2, clusR*trackAlpha / erp);
 
         m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 1, 0, 0);
         m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 1, 1, 1. / ez);
@@ -844,7 +844,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
         m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 2, 1, trackBeta / ez);
         m_matrix_container_1D_radius_posz->add_to_lhs(index_1D_radius, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-        m_matrix_container_1D_radius_posz->add_to_rhs(index_1D_radius, 0, drphi / erp);
+        m_matrix_container_1D_radius_posz->add_to_rhs(index_1D_radius, 0, clusR*drphi / erp);
         m_matrix_container_1D_radius_posz->add_to_rhs(index_1D_radius, 1, dz / ez);
         m_matrix_container_1D_radius_posz->add_to_rhs(index_1D_radius, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
@@ -854,9 +854,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     }
 
     // Fill distortion matrices
-    m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 0, 0, clusR / erp);
+    m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 0, 0, square(clusR) / erp);
     m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 0, 1, 0);
-    m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 0, 2, trackAlpha / erp);
+    m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 0, 2, clusR*trackAlpha / erp);
 
     m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 1, 0, 0);
     m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 1, 1, 1. / ez);
@@ -866,7 +866,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 2, 1, trackBeta / ez);
     m_matrix_container_2D_radius_z->add_to_lhs(index_2D_rz, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-    m_matrix_container_2D_radius_z->add_to_rhs(index_2D_rz, 0, drphi / erp);
+    m_matrix_container_2D_radius_z->add_to_rhs(index_2D_rz, 0, clusR*drphi / erp);
     m_matrix_container_2D_radius_z->add_to_rhs(index_2D_rz, 1, dz / ez);
     m_matrix_container_2D_radius_z->add_to_rhs(index_2D_rz, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
@@ -874,9 +874,9 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     m_matrix_container_2D_radius_z->add_to_entries(index_2D_rz);
 
     // Fill distortion matrices
-    m_matrix_container->add_to_lhs(index, 0, 0, clusR / erp);
+    m_matrix_container->add_to_lhs(index, 0, 0, square(clusR) / erp);
     m_matrix_container->add_to_lhs(index, 0, 1, 0);
-    m_matrix_container->add_to_lhs(index, 0, 2, trackAlpha / erp);
+    m_matrix_container->add_to_lhs(index, 0, 2, clusR*trackAlpha / erp);
 
     m_matrix_container->add_to_lhs(index, 1, 0, 0);
     m_matrix_container->add_to_lhs(index, 1, 1, 1. / ez);
@@ -886,7 +886,7 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     m_matrix_container->add_to_lhs(index, 2, 1, trackBeta / ez);
     m_matrix_container->add_to_lhs(index, 2, 2, square(trackAlpha) / erp + square(trackBeta) / ez);
 
-    m_matrix_container->add_to_rhs(index, 0, drphi / erp);
+    m_matrix_container->add_to_rhs(index, 0, clusR*drphi / erp);
     m_matrix_container->add_to_rhs(index, 1, dz / ez);
     m_matrix_container->add_to_rhs(index, 2, trackAlpha * drphi / erp + trackBeta * dz / ez);
 
