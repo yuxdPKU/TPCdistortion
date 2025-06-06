@@ -137,7 +137,7 @@ void Fun4All_TrackAnalysis(
   //to turn on the average corrections derived from simulation, enable the three lines below
   //note: these are designed to be used only if static corrections are also applied
   G4TPC::ENABLE_AVERAGE_CORRECTIONS = true;
-  G4TPC::USE_PHI_AS_RAD_AVERAGE_CORRECTIONS = false;
+  G4TPC::USE_PHI_AS_RAD_AVERAGE_CORRECTIONS = true;
   G4TPC::average_correction_filename = "./Distortions_2D_mm_53534_rz.root";
   std::cout<<"Average distortion map used: "<<G4TPC::average_correction_filename<<std::endl;
   //G4TPC::average_correction_filename = std::string(getenv("CALIBRATIONROOT")) + "/distortion_maps/average_minus_static_distortion_inverted_10-new.root";

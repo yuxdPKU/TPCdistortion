@@ -38,7 +38,7 @@ Rank=CPU_Speed
 
 # Used to give jobs a directory with respect to file input 
 # and output.
-Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/staticCorrOn_scale1_XudongMap_3
+Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Full_fit/staticCorrOn_scale1_XudongMap_4
 
 # The executable we want to run.
 Executable     = $(Initialdir)/run_seeddst.sh
@@ -82,4 +82,5 @@ on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)
 # then the job will be submitted N times.  Use the $(Process)
 # macro to make your input/output and log files unique.
 #Queue Segment from $(Initialdir)/$(RunNumber)_seg.txt
-Queue 2628
+#Queue 2628
+Queue 100

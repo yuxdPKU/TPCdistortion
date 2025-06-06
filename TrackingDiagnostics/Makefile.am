@@ -11,13 +11,15 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  DistortionAnalysis.h
+  DistortionAnalysis.h \
+  PHTrackPruner.h
 
 lib_LTLIBRARIES = \
   libDistortionAnalysis.la
 
 libDistortionAnalysis_la_SOURCES = \
-  DistortionAnalysis.cc
+  DistortionAnalysis.cc \
+  PHTrackPruner.cc
 
 libDistortionAnalysis_la_LIBADD = \
   -lphool \

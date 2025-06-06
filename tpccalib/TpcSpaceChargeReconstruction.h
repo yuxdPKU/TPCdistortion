@@ -57,10 +57,44 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
     m_use_micromegas = value;
   }
 
+  void setMinRPhiErr(float minRPhiErr)
+  {
+    m_minRPhiErr = minRPhiErr;
+  }
+
+  void setMinZErr(float minZErr)
+  {
+    m_minZErr = minZErr;
+  }
+
   /// track min pT
   void set_min_pt(double value)
   {
     m_min_pt = value;
+  }
+
+  /// track pcaz cut
+  void setPCAzcut(double value)
+  {
+    m_pcazcut = value;
+  }
+
+  /// track eta cut
+  void setEtacut(double value)
+  {
+    m_etacut = value;
+  }
+
+  /// track crossing
+  void requireCrossing(bool flag = true)
+  {
+    m_requireCrossing = flag;
+  }
+
+  /// track near CM
+  void requireCM(bool flag = true)
+  {
+    m_requireCM = flag;
   }
 
   /// set grid dimensions
@@ -69,6 +103,7 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
   \param zbins the number of bins along z
   */
   void set_grid_dimensions(int phibins, int rbins, int zbins);
+  void set_grid_dimensions(const int layerBins);
 
   /// set to true to store evaluation histograms and ntuples
   void set_save_histograms(bool value) { m_savehistograms = value; }
@@ -102,6 +137,14 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
   /// parameters
   void SetDefaultParameters() override;
 
+  /// disable distortion correction
+  void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
+  void disableStaticCorr() { m_disable_static_corr = true; }
+  void disableAverageCorr() { m_disable_average_corr = true; }
+  void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
+
+  void set_svtx_track_map_name(std::string name) {_svtx_track_map_name = name;}
+
  private:
   /// load nodes
   int load_nodes(PHCompositeNode*);
@@ -114,12 +157,17 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
 
   /// returns true if track fulfills basic requirement for distortion calculations
   bool accept_track(SvtxTrack*) const;
+  bool checkTrackCM(SvtxTrack *track) const;
+  bool checkTPOTResidual(SvtxTrack* track) const;
 
   /// process track
   void process_track(SvtxTrack*);
 
   /// get relevant cell for a given cluster
   int get_cell_index(const Acts::Vector3&);
+  int get_cell_index_layer(const int layer);
+  int get_cell_index_radius(const Acts::Vector3 &loc);
+  int get_cell_index_rz(const Acts::Vector3 &loc);
 
   /// output file
   std::string m_outputfile = "TpcSpaceChargeMatrices.root";
@@ -129,6 +177,18 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
 
   /// minimum pT required for track to be considered in residuals calculation (GeV/c)
   double m_min_pt = 0.5;
+
+  /// track pca z cut, only apply if m_requireCM is enabled
+  double m_pcazcut = 10; // +/- 10 cm
+
+  /// track eta cut, only apply if m_requireCM is enabled
+  double m_etacut = 0.25; // +/- 0.25
+
+  /// require track crossing zero
+  bool m_requireCrossing = false;
+
+  /// require track near CM, only for 1D distortion map (layer or radius)
+  bool m_requireCM = false;
 
   ///@name selection parameters
   //@{
@@ -141,8 +201,17 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
   float m_max_dz = 0.5;
   //@}
 
+  // cuts on rphi, z residuals errors
+  float m_minRPhiErr = 0.005;  // 0.005cm -- 50um
+  float m_minZErr = 0.01;  // 0.01cm -- 100um
+
   /// matrix container
   std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container;
+  std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container_1D_layer_negz;
+  std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container_1D_layer_posz;
+  std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container_1D_radius_negz;
+  std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container_1D_radius_posz;
+  std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container_2D_radius_z;
 
   ///@name counters
   //@{
@@ -179,6 +248,15 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
 
   //! tpc global position wrapper
   TpcGlobalPositionWrapper m_globalPositionWrapper;
+
+  /// disable distortion correction
+  bool m_disable_module_edge_corr = false;
+  bool m_disable_static_corr = false;
+  bool m_disable_average_corr = false;
+  bool m_disable_fluctuation_corr = false;
+
+  //
+  std::string _svtx_track_map_name = "SvtxTrackMap";
 };
 
 #endif

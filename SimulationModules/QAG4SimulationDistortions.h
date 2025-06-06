@@ -4,6 +4,7 @@
 #define QAG4SIMULATIONDISTORTIONS_H
 
 #include <fun4all/SubsysReco.h>
+#include <tpc/TpcClusterMover.h>
 #include <tpc/TpcGlobalPositionWrapper.h>
 #include <trackbase/TrkrDefs.h>
 #include <trackbase_historic/TrackSeed.h>
@@ -29,8 +30,22 @@ class QAG4SimulationDistortions : public SubsysReco
   int Init(PHCompositeNode*) override;
   int InitRun(PHCompositeNode* topNode) override;
   int process_event(PHCompositeNode*) override;
+  int End(PHCompositeNode*) override;
+
+  //! track map name
+  void set_trackmap_name( const std::string& value )
+  { m_trackmapname = value; }
+
+  void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
+  void disableStaticCorr() { m_disable_static_corr = true; }
+  void disableAverageCorr() { m_disable_average_corr = true; }
+  void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
 
  private:
+
+  //! track map name
+  std::string m_trackmapname = "SvtxSiliconMMTrackMap";
+
   std::string get_histo_prefix()
   {
     return std::string("h_") + Name() + std::string("_");
@@ -47,6 +62,8 @@ class QAG4SimulationDistortions : public SubsysReco
   TrkrClusterContainer* m_clusterContainer = nullptr;
   ActsGeometry* m_tGeometry = nullptr;
   PHG4TpcCylinderGeomContainer *m_tpcGeom = nullptr;
+
+  TpcClusterMover m_clusterMover;
 
   //! tpc global position wrapper
   TpcGlobalPositionWrapper m_globalPositionWrapper;
@@ -69,6 +86,21 @@ class QAG4SimulationDistortions : public SubsysReco
 
   float m_clusEta = NAN;
   float m_stateEta = NAN;
+
+  float m_tanAlpha_mover = NAN;
+  float m_tanBeta_mover = NAN;
+  float m_drphi_mover = NAN;
+  float m_dz_mover = NAN;
+  float m_clusR_mover = NAN;
+  float m_clusPhi_mover = NAN;
+  float m_clusZ_mover = NAN;
+  float m_statePhi_mover = NAN;
+  float m_stateZ_mover = NAN;
+  float m_stateR_mover = NAN;
+
+  float m_clusEta_mover = NAN;
+  float m_stateEta_mover = NAN;
+
   int m_layer = -1;
   float m_statePt = NAN;
   float m_statePz = NAN;
@@ -133,6 +165,23 @@ class QAG4SimulationDistortions : public SubsysReco
   std::vector<float> m_stateeta_tpot;
 
   TrkrDefs::cluskey m_cluskey = TrkrDefs::CLUSKEYMAX;
+
+  /// disable distortion correction
+  bool m_disable_module_edge_corr = false;
+  bool m_disable_static_corr = false;
+  bool m_disable_average_corr = false;
+  bool m_disable_fluctuation_corr = false;
+
+  ///@name counters
+  //@{
+  int m_total_tracks = 0;
+  int m_accepted_tracks = 0;
+
+  int m_total_states = 0;
+  int m_accepted_states = 0;
+  //@}
+
+
 };
 
 #endif  // QAG4SIMULATIONDISTORTIONS_H

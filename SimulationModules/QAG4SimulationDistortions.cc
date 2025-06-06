@@ -23,6 +23,7 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrackState.h>
 #include <trackbase_historic/TrackSeed.h>
+#include <trackbase_historic/TrackSeedHelper.h>
 
 #include <g4detectors/PHG4CylinderGeomContainer.h>
 #include <g4detectors/PHG4TpcCylinderGeom.h>
@@ -99,7 +100,15 @@ QAG4SimulationDistortions::~QAG4SimulationDistortions() = default;
 //____________________________________________________________________________..
 int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
 {
-  Fun4AllHistoManager* hm = QAHistManagerDef::getHistoManager();
+  // reset counters
+  m_total_tracks = 0;
+  m_accepted_tracks = 0;
+
+  m_total_states = 0;
+  m_accepted_states = 0;
+
+  // histogram manager
+  auto* hm = QAHistManagerDef::getHistoManager();
   assert(hm);
 
   TH1* h(nullptr);
@@ -178,6 +187,21 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
   t->Branch("layer", &m_layer, "layer/I");
   t->Branch("statePt", &m_statePt, "statePt/F");
   t->Branch("statePz", &m_statePz, "statePz/F");
+
+  t->Branch("tanAlpha_mover", &m_tanAlpha_mover, "tanAlpha_mover/F");
+  t->Branch("tanBeta_mover", &m_tanBeta_mover, "tanBeta_mover/F");
+  t->Branch("drphi_mover", &m_drphi_mover, "drphi_mover/F");
+  t->Branch("dz_mover", &m_dz_mover, "dz_mover/F");
+  t->Branch("clusR_mover", &m_clusR_mover, "clusR_mover/F");
+  t->Branch("clusPhi_mover", &m_clusPhi_mover, "clusPhi_mover/F");
+  t->Branch("clusZ_mover", &m_clusZ_mover, "clusZ_mover/F");
+  t->Branch("statePhi_mover", &m_statePhi_mover, "statePhi_mover/F");
+  t->Branch("stateZ_mover", &m_stateZ_mover, "stateZ_mover/F");
+  t->Branch("stateR_mover", &m_stateR_mover, "stateR_mover/F");
+
+  t->Branch("clusEta_mover", &m_clusEta_mover, "clusEta_mover/F");
+  t->Branch("stateEta_mover", &m_stateEta_mover, "stateEta_mover/F");
+
   t->Branch("trackPt", &m_trackPt, "trackPt/F");
   t->Branch("charge", &m_charge, "charge/I");
   t->Branch("crossing", &m_crossing, "crossing/I");
@@ -247,7 +271,7 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
 int QAG4SimulationDistortions::InitRun(PHCompositeNode* topNode)
 {
   // track map
-  m_trackMap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxSiliconMMTrackMap");
+  m_trackMap = findNode::getClass<SvtxTrackMap>(topNode, m_trackmapname);
 
   // cluster map
   m_clusterContainer = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER");
@@ -260,7 +284,14 @@ int QAG4SimulationDistortions::InitRun(PHCompositeNode* topNode)
 
   // load distortion corrections
   m_globalPositionWrapper.loadNodes(topNode);
+  if (m_disable_module_edge_corr) { m_globalPositionWrapper.set_enable_module_edge_corr(false); }
+  if (m_disable_static_corr) { m_globalPositionWrapper.set_enable_static_corr(false); }
+  if (m_disable_average_corr) { m_globalPositionWrapper.set_enable_average_corr(false); }
+  if (m_disable_fluctuation_corr) { m_globalPositionWrapper.set_enable_fluctuation_corr(false); }
 
+  // clusterMover needs the correct radii of the TPC layers
+  m_clusterMover.initialize_geometry(m_tpcGeom);
+  m_clusterMover.set_verbosity(0);
 
   if (!m_trackMap || !m_clusterContainer || !m_tGeometry)
   {
@@ -328,6 +359,9 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
   for (const auto& [key, track] : *m_trackMap)
   {
 
+    // total track counter
+    ++m_total_tracks;
+
     // get track crossing and check
     const auto crossing = track->get_crossing();
     if(crossing == SHRT_MAX)
@@ -346,34 +380,83 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
     auto tpcSeed = track->get_tpc_seed();
     auto siliconSeed = track->get_silicon_seed();
 
+    /*
+    std::cout<<"track crossing "<<crossing<<" , tpc_pt = "<<fabs(1. / tpcSeed->get_qOverR()) * (0.3 / 100.) * 1.4<<" , tpc_phi = "<<tpcSeed->get_phi()<<" , si_phi = "<<siliconSeed->get_phi()<<" , dphi = "<<(tpcSeed->get_phi() - siliconSeed->get_phi())<<std::endl;
+    std::cout<<"tpc_eta = "<<tpcSeed->get_eta()<<" , si_eta = "<<siliconSeed->get_eta()<<" , deta = "<<(tpcSeed->get_eta() - siliconSeed->get_eta())<<std::endl;
+    std::cout<<"tpc_x = "<<(TrackSeedHelper::get_xyz(tpcSeed)).x()<<" , si_x = "<<(TrackSeedHelper::get_xyz(siliconSeed)).x()<<" , dx = "<<((TrackSeedHelper::get_xyz(tpcSeed)).x() - (TrackSeedHelper::get_xyz(siliconSeed)).x())<<std::endl;
+    std::cout<<"tpc_y = "<<(TrackSeedHelper::get_xyz(tpcSeed)).y()<<" , si_y = "<<(TrackSeedHelper::get_xyz(siliconSeed)).y()<<" , dy = "<<((TrackSeedHelper::get_xyz(tpcSeed)).y() - (TrackSeedHelper::get_xyz(siliconSeed)).y())<<std::endl;
+    std::cout<<"tpc_z = "<<(TrackSeedHelper::get_xyz(tpcSeed)).z()<<" , si_z = "<<(TrackSeedHelper::get_xyz(siliconSeed)).z()<<" , dz = "<<((TrackSeedHelper::get_xyz(tpcSeed)).z() - (TrackSeedHelper::get_xyz(siliconSeed)).z())<<std::endl;
+    */
+
     /// Should have never been added to the map...
     if (!tpcSeed || !siliconSeed)
     {
       continue;
     }
 
+    if (Verbosity() > 0)
+    {
+      std::cout << " tpc seed " << tpcSeed->get_tpc_seed_index()
+	        << " with si seed " << siliconSeed->get_silicon_seed_index()
+		<< " crossing " << siliconSeed->get_crossing()
+		<< std::endl;
+    }
+
     get_MvtxInttTpot_info(track);
+
+    // accepted track counter
+    ++m_accepted_tracks;
+
+    // get the fully corrected cluster global positions
+    std::vector<std::pair<TrkrDefs::cluskey, Acts::Vector3>> global_raw;
+    for (const auto& ckey : get_cluster_keys(track))
+    {
+      auto cluster = m_clusterContainer->findCluster(ckey);
+
+      // Fully correct the cluster positions for the crossing and all distortions
+      Acts::Vector3 global = m_globalPositionWrapper.getGlobalPositionDistortionCorrected(ckey, cluster, crossing );
+
+      // add the global positions to a vector to give to the cluster mover
+      global_raw.emplace_back(std::make_pair(ckey, global));
+    }
+    // move the corrected cluster positions back to the original readout surface
+    auto global_moved = m_clusterMover.processTrack(global_raw);
 
     for (auto iter = track->begin_states(); iter != track->end_states(); ++iter)
     {
-      auto state = iter->second;
+      ++m_total_states;
 
-      /// If the state name wasn't set to the ckey, it wasn't analyzed
-      /// in PHTpcResiduals (i.e. it isn't in the tpc)
-      if ((state->get_name()).find("UNKNOWN") != std::string::npos)
-      {
-        continue;
-      }
+      auto& state = iter->second;
+      const auto ckey = state->get_cluskey();
+      const auto trkrId = TrkrDefs::getTrkrId(ckey);
 
-      TrkrDefs::cluskey const ckey = std::stoll(state->get_name());
+      if( trkrId != TrkrDefs::tpcId )
+      { continue; }
+
+      ++m_accepted_states;
 
       auto cluster = m_clusterContainer->findCluster(ckey);
 
       const auto clusGlobPosition = m_globalPositionWrapper.getGlobalPositionDistortionCorrected(ckey, cluster, crossing);
 
+      Acts::Vector3 clusGlobPosition_moved(0, 0, 0);
+      for (const auto& pair : global_moved)
+      {
+        auto thiskey = pair.first;
+        clusGlobPosition_moved = pair.second;
+        if (thiskey == ckey)
+        {
+          break;
+        }
+      }
+
       const float clusR = get_r(clusGlobPosition(0), clusGlobPosition(1));
       const float clusPhi = std::atan2(clusGlobPosition(1), clusGlobPosition(0));
       const float clusZ = clusGlobPosition(2);
+
+      const float clusR_moved = get_r(clusGlobPosition_moved(0), clusGlobPosition_moved(1));
+      const float clusPhi_moved = std::atan2(clusGlobPosition_moved(1), clusGlobPosition_moved(0));
+      const float clusZ_moved = clusGlobPosition_moved(2);
 
       // cluster errors
       const float clusRPhiErr = cluster->getRPhiError();
@@ -403,18 +486,35 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
       const float statePhi = std::atan2(trackY, trackX);
       const float stateZ = trackZ;
 
+      const auto stateX_unmoved = stateGlobPosition(0);
+      const auto stateY_unmoved = stateGlobPosition(1);
+      const auto stateZ_unmoved = stateGlobPosition(2);
+      const float statePhi_unmoved = std::atan2(stateY_unmoved,stateX_unmoved);
+
       // Calculate residuals
       const float drphi = clusR * deltaPhi(clusPhi - statePhi);
       const float dz = clusZ - stateZ;
+
+      const float drphi_mover = clusR_moved * deltaPhi(clusPhi_moved - statePhi_unmoved);
+      const float dz_mover = clusZ_moved - stateZ_unmoved;
 
       const auto trackPPhi = -stateGlobMom(0) * std::sin(statePhi) + stateGlobMom(1) * std::cos(statePhi);
       const auto trackPR = stateGlobMom(0) * std::cos(statePhi) + stateGlobMom(1) * std::sin(statePhi);
       const auto trackPZ = stateGlobMom(2);
 
+      const auto trackPPhi_mover = -stateGlobMom(0) * std::sin(statePhi_unmoved) + stateGlobMom(1) * std::cos(statePhi_unmoved);
+      const auto trackPR_mover = stateGlobMom(0) * std::cos(statePhi_unmoved) + stateGlobMom(1) * std::sin(statePhi_unmoved);
+      const auto trackPZ_mover = stateGlobMom(2);
+
       const auto trackAlpha = -trackPPhi / trackPR;
       const auto trackBeta = -trackPZ / trackPR;
       const auto trackEta = std::atanh(stateGlobMom(2) / stateGlobMom.norm());
       const auto clusEta = std::atanh(clusZ / clusGlobPosition.norm());
+
+      const auto trackAlpha_mover = -trackPPhi_mover / trackPR_mover;
+      const auto trackBeta_mover = -trackPZ_mover / trackPR_mover;
+      const auto trackEta_mover = std::atanh(stateGlobMom(2) / stateGlobMom.norm());
+      const auto clusEta_mover = std::atanh(clusZ_moved / clusGlobPosition_moved.norm());
 
       h_alpha->Fill(trackAlpha, drphi);
       h_beta->Fill(trackBeta, dz);
@@ -459,6 +559,20 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
       m_crossing = track->get_crossing();
       m_trackdEdx = calc_dedx(tpcSeed, m_clusterContainer, m_tpcGeom);
 
+      m_tanAlpha_mover = trackAlpha_mover;
+      m_tanBeta_mover = trackBeta_mover;
+      m_drphi_mover = drphi_mover;
+      m_dz_mover = dz_mover;
+      m_clusR_mover = clusR_moved;
+      m_clusPhi_mover = clusPhi_moved;
+      m_clusZ_mover = clusZ_moved;
+      m_statePhi_mover = statePhi_unmoved;
+      m_stateZ_mover = stateZ_unmoved;
+      m_stateR_mover = stateR;
+
+      m_clusEta_mover = clusEta_mover;
+      m_stateEta_mover = trackEta_mover;
+
       const auto cluster_keys(get_cluster_keys(track));
       m_track_nmvtx = count_clusters<TrkrDefs::mvtxId>(cluster_keys);
       m_track_nintt = count_clusters<TrkrDefs::inttId>(cluster_keys);
@@ -482,6 +596,28 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//___________________________________________________________________________________
+int QAG4SimulationDistortions::End(PHCompositeNode* /*topNode*/)
+{
+  // print counters
+  std::cout
+      << "QAG4SimulationDistortions::End -"
+      << " track statistics total: " << m_total_tracks
+      << " accepted: " << m_accepted_tracks
+      << " fraction: " << 100. * m_accepted_tracks / m_total_tracks << "%"
+      << std::endl;
+
+  std::cout
+      << "QAG4SimulationDistortions::End -"
+      << " state statistics total: " << m_total_states
+      << " accepted: " << m_accepted_states << " fraction: "
+      << 100. * m_accepted_states / m_total_states << "%"
+      << std::endl;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//_____________________________________________________________________________
 bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
 {
 

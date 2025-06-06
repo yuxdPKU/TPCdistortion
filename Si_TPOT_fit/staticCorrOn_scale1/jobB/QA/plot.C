@@ -64,7 +64,7 @@ void plot()
     float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
     float tanAlpha, tanBeta;
     float trackPt;
-    int layer;
+    int layer, charge;
     int track_nmvtx, track_nintt, track_ntpc, track_ntpot;
     int track_nmvtxstate, track_ninttstate, track_ntpcstate, track_ntpotstate;
     intree->SetBranchAddress("dz",&dz);
@@ -80,6 +80,7 @@ void plot()
     intree->SetBranchAddress("trackPt",&trackPt);
     intree->SetBranchAddress("tanBeta",&tanBeta);
     intree->SetBranchAddress("layer",&layer);
+    intree->SetBranchAddress("charge",&charge);
     intree->SetBranchAddress("track_nmvtx",&track_nmvtx);
     intree->SetBranchAddress("track_nintt",&track_nintt);
     intree->SetBranchAddress("track_ntpc",&track_ntpc);
@@ -100,6 +101,7 @@ void plot()
     int nevent = intree->GetEntries();
     for (int i=0; i<nevent; i++)
     {
+      if (i % (Long64_t)(nevent / 10) == 0) std::cout << "progress: " << i / (Long64_t)(nevent / 10) << "0%" << std::endl;
       intree->GetEntry(i);
       double erp = square(clusRPhiErr) + square(stateRPhiErr);
       double ez = square(clusZErr) + square(stateZErr);
@@ -111,6 +113,7 @@ void plot()
       if (track_ninttstate<2) continue;
       if (track_ntpc<35) continue;
       if (track_ntpotstate<2) continue;
+      //if (charge!=-1) continue;
       //if (trackPt<1) continue;
   
       if (std::fabs(clusZ)>=20) continue;
@@ -221,14 +224,15 @@ void fit_gauss(TH2* h, TString name, bool verbose=0)
 
   TCanvas *c1 = new TCanvas("c1", "Canvas", 800, 600);
   c1->SetTopMargin(0.12);
+  gPad->SetLogz(1);
   h->Draw("COLZ");
 
   graph_full->SetMarkerStyle(20);
   graph_full->SetMarkerColor(kRed);
-  graph_full->Draw("P");
+  graph_full->Draw("P,same");
   graph_sub->SetMarkerStyle(20);
   graph_sub->SetMarkerColor(kBlack);
-  graph_sub->Draw("P");
+  graph_sub->Draw("P,same");
 
   TLine *line = new TLine(h->GetXaxis()->GetXmin(), 0, h->GetXaxis()->GetXmax(), 0);
   line->SetLineColor(kRed);

@@ -106,7 +106,7 @@ int DistortionAnalysis::InitRun(PHCompositeNode* topNode)
 
   // global position wrapper
   m_globalPositionWrapper.loadNodes(topNode);
-
+  m_globalPositionWrapper.set_suppressCrossing(m_convertSeeds);
   // clusterMover needs the correct radii of the TPC layers
   auto tpccellgeo = findNode::getClass<PHG4TpcCylinderGeomContainer>(topNode, "CYLINDERCELLGEOM_SVTX");
   m_clusterMover.initialize_geometry(tpccellgeo);
@@ -550,7 +550,7 @@ void DistortionAnalysis::circleFitClusters(
     const Acts::Vector3 pos = m_globalPositionWrapper.getGlobalPositionDistortionCorrected(key, cluster, crossing );
     clusPos.push_back(pos);
   }
-  TrackFitUtils::position_vector_t yzpoints;
+  TrackFitUtils::position_vector_t yzpoints,xypoints;
 
   for (auto& pos : clusPos)
   {
@@ -560,15 +560,17 @@ void DistortionAnalysis::circleFitClusters(
     {
       continue;
     }
+    xypoints.push_back(std::make_pair(pos.x(), pos.y()));
     yzpoints.push_back(std::make_pair(pos.z(), pos.y()));
     global_vec.push_back(pos);
   }
 
+  auto xyparams = TrackFitUtils::line_fit(xypoints);
   auto yzLineParams = TrackFitUtils::line_fit(yzpoints);
   auto fitpars = TrackFitUtils::fitClusters(global_vec, keys, false);
   // auto fitpars = TrackFitUtils::fitClusters(global_vec, keys, !m_linefitTPCOnly);
-  m_xyint = std::numeric_limits<float>::quiet_NaN();
-  m_xyslope = std::numeric_limits<float>::quiet_NaN();
+  m_xyint = std::get<1>(xyparams);
+  m_xyslope = std::get<0>(xyparams);
   m_yzint = std::get<1>(yzLineParams);
   m_yzslope = std::get<0>(yzLineParams);
   if (fitpars.size() > 0)
@@ -1756,7 +1758,7 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("nmms", &m_nmms, "m_nmms/I");
   m_tree->Branch("nmmsstate", &m_nmmsstate, "m_nmmsstate/I");
   m_tree->Branch("tile", &m_tileid, "m_tileid/I");
-  m_tree->Branch("vertexid", &m_vertexid, "m_vertexid/I");
+  m_tree->Branch("vertexid", &m_vertexid);
   m_tree->Branch("vertex_crossing", &m_vertex_crossing, "m_vertex_crossing/I");
   m_tree->Branch("vx", &m_vx, "m_vx/F");
   m_tree->Branch("vy", &m_vy, "m_vy/F");
@@ -1776,6 +1778,7 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("dcaxy", &m_dcaxy, "m_dcaxy/F");
   m_tree->Branch("dcaz", &m_dcaz, "m_dcaz/F");
 
+  /*
   m_tree->Branch("cluskeys", &m_cluskeys);
   m_tree->Branch("clusedge", &m_clusedge);
   m_tree->Branch("clusoverlap", &m_clusoverlap);
@@ -1798,6 +1801,7 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("clussize", &m_clussize);
   m_tree->Branch("clusphisize", &m_clusphisize);
   m_tree->Branch("cluszsize", &m_cluszsize);
+  */
 
 /*
   m_tree->Branch("clushitsetkey", &m_clushitsetkey);
@@ -1826,6 +1830,7 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("idealsurfgamma", &m_idealsurfgamma);
 */
 
+  /*
   m_tree->Branch("statelx", &m_statelx);
   m_tree->Branch("statelz", &m_statelz);
   m_tree->Branch("stateelx", &m_stateelx);
@@ -1837,6 +1842,7 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("statepy", &m_statepy);
   m_tree->Branch("statepz", &m_statepz);
   m_tree->Branch("statepl", &m_statepl);
+  */
 
 /*
   m_tree->Branch("statelxglobderivdx", &m_statelxglobderivdx);

@@ -6,6 +6,8 @@
 
 #include "TpcSpaceChargeReconstruction.h"
 #include "TpcSpaceChargeMatrixContainerv1.h"
+#include "TpcSpaceChargeMatrixContainerv2.h"
+#include "TpcSpaceChargeMatrixContainerv3.h"
 #include "TpcSpaceChargeReconstructionHelper.h"
 
 #include <g4detectors/PHG4TpcCylinderGeom.h>
@@ -94,6 +96,11 @@ namespace
   static constexpr float m_zmin = -105.5;
   static constexpr float m_zmax = 105.5;
 
+  static constexpr int m_minClusCount = 10;
+
+  static constexpr float m_layermin = 7;
+  static constexpr float m_layermax = 55;
+
   /// get cluster keys from a given track
   std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track)
   {
@@ -130,6 +137,11 @@ TpcSpaceChargeReconstruction::TpcSpaceChargeReconstruction(const std::string& na
   : SubsysReco(name)
   , PHParameterInterface(name)
   , m_matrix_container(new TpcSpaceChargeMatrixContainerv1)
+  , m_matrix_container_1D_layer_negz(new TpcSpaceChargeMatrixContainerv2)
+  , m_matrix_container_1D_layer_posz(new TpcSpaceChargeMatrixContainerv2)
+  , m_matrix_container_1D_radius_negz(new TpcSpaceChargeMatrixContainerv2)
+  , m_matrix_container_1D_radius_posz(new TpcSpaceChargeMatrixContainerv2)
+  , m_matrix_container_2D_radius_z(new TpcSpaceChargeMatrixContainerv3)
 {
   InitializeParameters();
 }
@@ -138,6 +150,15 @@ TpcSpaceChargeReconstruction::TpcSpaceChargeReconstruction(const std::string& na
 void TpcSpaceChargeReconstruction::set_grid_dimensions(int phibins, int rbins, int zbins)
 {
   m_matrix_container->set_grid_dimensions(phibins, rbins, zbins);
+  m_matrix_container_1D_radius_negz->set_grid_dimensions(rbins);
+  m_matrix_container_1D_radius_posz->set_grid_dimensions(rbins);
+  m_matrix_container_2D_radius_z->set_grid_dimensions(phibins, rbins, zbins);
+}
+
+void TpcSpaceChargeReconstruction::set_grid_dimensions(const int layerBins)
+{
+  m_matrix_container_1D_layer_negz->set_grid_dimensions(layerBins);
+  m_matrix_container_1D_layer_posz->set_grid_dimensions(layerBins);
 }
 
 //_____________________________________________________________________
@@ -180,6 +201,9 @@ int TpcSpaceChargeReconstruction::InitRun(PHCompositeNode* /*unused*/)
 
   // also identify the matrix container
   m_matrix_container->identify();
+  m_matrix_container_1D_radius_negz->identify();
+  m_matrix_container_1D_radius_posz->identify();
+  m_matrix_container_2D_radius_z->identify();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -202,11 +226,16 @@ int TpcSpaceChargeReconstruction::process_event(PHCompositeNode* topNode)
 int TpcSpaceChargeReconstruction::End(PHCompositeNode* /*topNode*/)
 {
   // save matrix container in output file
-  if (m_matrix_container)
+  if (m_matrix_container && m_matrix_container_1D_layer_negz && m_matrix_container_1D_layer_posz && m_matrix_container_1D_radius_negz && m_matrix_container_1D_radius_posz && m_matrix_container_2D_radius_z)
   {
     std::unique_ptr<TFile> outputfile(TFile::Open(m_outputfile.c_str(), "RECREATE"));
     outputfile->cd();
     m_matrix_container->Write("TpcSpaceChargeMatrixContainer");
+    m_matrix_container_1D_layer_negz->Write("TpcSpaceChargeMatrixContainer_1D_layer_negz");
+    m_matrix_container_1D_layer_posz->Write("TpcSpaceChargeMatrixContainer_1D_layer_posz");
+    m_matrix_container_1D_radius_negz->Write("TpcSpaceChargeMatrixContainer_1D_radius_negz");
+    m_matrix_container_1D_radius_posz->Write("TpcSpaceChargeMatrixContainer_1D_radius_posz");
+    m_matrix_container_2D_radius_z->Write("TpcSpaceChargeMatrixContainer_2D_radius_z");
   }
 
   // save histograms
@@ -277,7 +306,7 @@ int TpcSpaceChargeReconstruction::load_nodes(PHCompositeNode* topNode)
 {
 
   // tracks
-  m_track_map = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  m_track_map = findNode::getClass<SvtxTrackMap>(topNode, _svtx_track_map_name);
   assert(m_track_map);
 
   // clusters
@@ -289,6 +318,10 @@ int TpcSpaceChargeReconstruction::load_nodes(PHCompositeNode* topNode)
 
   // global position wrapper
   m_globalPositionWrapper.loadNodes(topNode);
+  if (m_disable_module_edge_corr) { m_globalPositionWrapper.set_enable_module_edge_corr(false); }
+  if (m_disable_static_corr) { m_globalPositionWrapper.set_enable_static_corr(false); }
+  if (m_disable_average_corr) { m_globalPositionWrapper.set_enable_average_corr(false); }
+  if (m_disable_fluctuation_corr) { m_globalPositionWrapper.set_enable_fluctuation_corr(false); }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -395,6 +428,11 @@ bool TpcSpaceChargeReconstruction::accept_track(SvtxTrack* track) const
     return false;
   }
 
+  if (m_requireCrossing && track->get_crossing()!=0)
+  {
+    return false;
+  }
+
   // ignore tracks with too few mvtx, intt and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
@@ -405,12 +443,143 @@ bool TpcSpaceChargeReconstruction::accept_track(SvtxTrack* track) const
   {
     return false;
   }
+  if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < 35)
+  {
+    return false;
+  }
   if (m_use_micromegas && count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
   {
     return false;
   }
 
+  if (m_use_micromegas && checkTPOTResidual(track)==false)
+  {
+    return false;
+  }
+
   // all tests passed
+  return true;
+}
+
+//___________________________________________________________________________________
+bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
+{
+  bool flag = true;
+
+  for (const auto& cluskey : get_cluster_keys(track))
+  {
+
+    // make sure cluster is from TPOT
+    const auto detId = TrkrDefs::getTrkrId(cluskey);
+    if (detId != TrkrDefs::micromegasId)
+    {
+      continue;
+    }
+
+    const auto cluster = m_cluster_map->findCluster(cluskey);
+
+    SvtxTrackState* state = nullptr;
+
+    // the track states from the Acts fit are fitted to fully corrected clusters, and are on the surface
+    for (auto state_iter = track->begin_states();
+         state_iter != track->end_states();
+         ++state_iter)
+    {
+      SvtxTrackState* tstate = state_iter->second;
+      auto stateckey = tstate->get_cluskey();
+      if (stateckey == cluskey)
+      {
+        state = tstate;
+        break;
+      }
+    }
+
+    const auto layer = TrkrDefs::getLayer(cluskey);
+
+    if (!state)
+    {
+      if (Verbosity() > 1)
+      {
+        std::cout << "   no state for cluster " << cluskey << "  in layer " << layer << std::endl;
+      }
+      continue;
+    }
+
+    const auto crossing = track->get_crossing();
+    assert(crossing != SHRT_MAX);
+
+    // calculate residuals with respect to cluster
+    // Get all the relevant information for residual calculation
+    const auto globClusPos = m_globalPositionWrapper.getGlobalPositionDistortionCorrected(cluskey, cluster, crossing);
+    const double clusR = get_r(globClusPos(0), globClusPos(1));
+    const double clusPhi = std::atan2(globClusPos(1), globClusPos(0));
+    const double clusZ = globClusPos(2);
+
+    const double globStateX = state->get_x();
+    const double globStateY = state->get_y();
+    const double globStateZ = state->get_z();
+    const double globStatePx = state->get_px();
+    const double globStatePy = state->get_py();
+    const double globStatePz = state->get_pz();
+
+    const double trackR = std::sqrt(square(globStateX) + square(globStateY));
+
+    const double dr = clusR - trackR;
+    const double trackDrDt = (globStateX * globStatePx + globStateY * globStatePy) / trackR;
+    const double trackDxDr = globStatePx / trackDrDt;
+    const double trackDyDr = globStatePy / trackDrDt;
+    const double trackDzDr = globStatePz / trackDrDt;
+
+    const double trackX = globStateX + dr * trackDxDr;
+    const double trackY = globStateY + dr * trackDyDr;
+    const double trackZ = globStateZ + dr * trackDzDr;
+    const double trackPhi = std::atan2(trackY, trackX);
+
+    // Calculate residuals
+    const double drphi = clusR * delta_phi(clusPhi - trackPhi);
+    if (std::isnan(drphi))
+    {
+      continue;
+    }
+
+    const double dz = clusZ - trackZ;
+    if (std::isnan(dz))
+    {
+      continue;
+    }
+
+    if (Verbosity() > 3)
+    {
+      std::cout << "TpcSpaceChargeReconstruction::checkTPOTResidual -"
+                << " drphi: " << drphi
+                << " dz: " << dz
+                << std::endl;
+    }
+
+    // check rphi and z error
+    if (std::fabs(drphi)>0.1)
+    {
+      flag = false;
+      break;
+    }
+  }
+
+  return flag;
+}
+
+//___________________________________________________________________________________
+bool TpcSpaceChargeReconstruction::checkTrackCM(SvtxTrack* track) const
+{
+  if (Verbosity() > 2)
+  {
+    std::cout << "TpcSpaceChargeReconstruction::checkTrackCM - pcaz: " << track->get_z() << std::endl;
+  }
+
+  if (m_requireCM && (fabs(track->get_z()) > m_pcazcut || fabs(track->get_eta()) > m_etacut))
+  {
+    return false;
+  }
+
   return true;
 }
 
@@ -438,6 +607,8 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
   // it is needed for geting cluster's global position
   const auto crossing = track->get_crossing();
   assert(crossing != SHRT_MAX);
+
+  bool nearCM = checkTrackCM(track);
 
   // running track state
   // loop over clusters
@@ -533,13 +704,13 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     const auto track_z_error = state->get_z_error();
 
     // residuals
-    const auto drp = cluster_r * delta_phi(cluster_phi - track_phi);
+    const auto drphi = cluster_r * delta_phi(cluster_phi - track_phi);
     const auto dz = cluster_z - track_z;
 
     // sanity checks
-    if (std::isnan(drp))
+    if (std::isnan(drphi))
     {
-      std::cout << "TpcSpaceChargeReconstruction::process_track - drp is nan" << std::endl;
+      std::cout << "TpcSpaceChargeReconstruction::process_track - drphi is nan" << std::endl;
       continue;
     }
 
@@ -569,7 +740,17 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
 
     // get cell
     const auto i = get_cell_index(global_position);
-    if (i < 0)
+    const auto i_1D_layer = get_cell_index_layer((int) TrkrDefs::getLayer(cluster_key));
+    const auto i_1D_radius = get_cell_index_radius(global_position);
+    const auto i_2D_rz = get_cell_index_rz(global_position);
+    if (Verbosity() > 3)
+    {
+      std::cout << "Bin index found is " << i << std::endl;
+      std::cout << "Bin index (1D layer) found is " << i_1D_layer << std::endl;
+      std::cout << "Bin index (1D radius) found is " << i_1D_radius << std::endl;
+      std::cout << "Bin index (2D radius & z) found is " << i_2D_rz << std::endl;
+    }
+    if (i < 0 || i_1D_layer < 0 || i_1D_radius < 0 || i_2D_rz < 0)
     {
       std::cout << "TpcSpaceChargeReconstruction::process_track - invalid cell index" << std::endl;
       continue;
@@ -581,14 +762,14 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         const auto iter = m_h_drphi.find(i);
         if (iter != m_h_drphi.end())
         {
-          iter->second->Fill(drp);
+          iter->second->Fill(drphi);
         }
       }
       {
         const auto iter = m_h_drphi_alpha.find(i);
         if (iter != m_h_drphi_alpha.end())
         {
-          iter->second->Fill(talpha, drp);
+          iter->second->Fill(talpha, drphi);
         }
       }
       {
@@ -618,11 +799,22 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     }
 
     // check against limits
-    if (std::abs(drp) > m_max_drphi)
+    if (std::abs(drphi) > m_max_drphi)
     {
       continue;
     }
     if (std::abs(dz) > m_max_dz)
+    {
+      continue;
+    }
+
+    // check rphi and z error
+    if (std::sqrt(erp) < m_minRPhiErr)
+    {
+      continue;
+    }
+
+    if (std::sqrt(ez) < m_minZErr)
     {
       continue;
     }
@@ -642,6 +834,114 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
       std::cout << std::endl;
     }
 
+    if (nearCM)
+    {
+      // Fill distortion matrices
+      if (cluster_z<0)
+      {
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 0, 0, cluster_r / erp);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 0, 1, 0);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 0, 2, talpha / erp);
+
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 1, 0, 0);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 1, 1, 1. / ez);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 1, 2, tbeta / ez);
+
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 2, 0, cluster_r * talpha / erp);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 2, 1, tbeta / ez);
+        m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 2, 2, square(talpha) / erp + square(tbeta) / ez);
+
+        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 0, drphi / erp);
+        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 1, dz / ez);
+        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 2, talpha * drphi / erp + tbeta * dz / ez);
+
+        // update entries in cell
+        m_matrix_container_1D_layer_negz->add_to_entries(i_1D_layer);
+
+
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 0, 0, cluster_r / erp);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 0, 1, 0);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 0, 2, talpha / erp);
+
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 1, 0, 0);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 1, 1, 1. / ez);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 1, 2, tbeta / ez);
+
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 2, 0, cluster_r * talpha / erp);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 2, 1, tbeta / ez);
+        m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 2, 2, square(talpha) / erp + square(tbeta) / ez);
+
+        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 0, drphi / erp);
+        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 1, dz / ez);
+        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 2, talpha * drphi / erp + tbeta * dz / ez);
+
+        // update entries in cell
+        m_matrix_container_1D_radius_negz->add_to_entries(i_1D_radius);
+      }
+      else if (cluster_z>=0)
+      {
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 0, 0, cluster_r / erp);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 0, 1, 0);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 0, 2, talpha / erp);
+
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 1, 0, 0);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 1, 1, 1. / ez);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 1, 2, tbeta / ez);
+
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 2, 0, cluster_r * talpha / erp);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 2, 1, tbeta / ez);
+        m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 2, 2, square(talpha) / erp + square(tbeta) / ez);
+
+        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 0, drphi / erp);
+        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 1, dz / ez);
+        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 2, talpha * drphi / erp + tbeta * dz / ez);
+
+        // update entries in cell
+        m_matrix_container_1D_layer_posz->add_to_entries(i_1D_layer);
+
+
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 0, 0, cluster_r / erp);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 0, 1, 0);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 0, 2, talpha / erp);
+
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 1, 0, 0);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 1, 1, 1. / ez);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 1, 2, tbeta / ez);
+
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 2, 0, cluster_r * talpha / erp);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 2, 1, tbeta / ez);
+        m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 2, 2, square(talpha) / erp + square(tbeta) / ez);
+
+        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 0, drphi / erp);
+        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 1, dz / ez);
+        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 2, talpha * drphi / erp + tbeta * dz / ez);
+
+        // update entries in cell
+        m_matrix_container_1D_radius_posz->add_to_entries(i_1D_radius);
+      }
+    }
+
+    // Fill distortion matrices
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 0, 0, cluster_r / erp);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 0, 1, 0);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 0, 2, talpha / erp);
+
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 1, 0, 0);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 1, 1, 1. / ez);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 1, 2, tbeta / ez);
+
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 2, 0, cluster_r * talpha / erp);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 2, 1, tbeta / ez);
+    m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 2, 2, square(talpha) / erp + square(tbeta) / ez);
+
+    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 0, drphi / erp);
+    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 1, dz / ez);
+    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 2, talpha * drphi / erp + tbeta * dz / ez);
+
+    // update entries in cell
+    m_matrix_container_2D_radius_z->add_to_entries(i_2D_rz);
+
+
     // update matrices
     // see https://indico.bnl.gov/event/7440/contributions/43328/attachments/31334/49446/talk.pdf for details
     m_matrix_container->add_to_lhs(i, 0, 0, cluster_r / erp);
@@ -656,9 +956,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     m_matrix_container->add_to_lhs(i, 2, 1, tbeta / ez);
     m_matrix_container->add_to_lhs(i, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-    m_matrix_container->add_to_rhs(i, 0, drp / erp);
+    m_matrix_container->add_to_rhs(i, 0, drphi / erp);
     m_matrix_container->add_to_rhs(i, 1, dz / ez);
-    m_matrix_container->add_to_rhs(i, 2, talpha * drp / erp + tbeta * dz / ez);
+    m_matrix_container->add_to_rhs(i, 2, talpha * drphi / erp + tbeta * dz / ez);
 
     // update entries in cell
     m_matrix_container->add_to_entries(i);
@@ -707,4 +1007,71 @@ int TpcSpaceChargeReconstruction::get_cell_index(const Acts::Vector3& global_pos
   int iz = zbins * (z - m_zmin) / (m_zmax - m_zmin);
 
   return m_matrix_container->get_cell_index(iphi, ir, iz);
+}
+
+//_____________________________________________________________________
+int TpcSpaceChargeReconstruction::get_cell_index_layer(const int layer)
+{
+  // get grid dimensions from matrix container
+  int layerbins = 0;
+  m_matrix_container_1D_layer_negz->get_grid_dimensions(layerbins);
+
+  // layer
+  if (layer < m_layermin || layer >= m_layermax)
+  {
+    return -1;
+  }
+  const int ilayer = layerbins * (layer - m_layermin) / (m_layermax - m_layermin);
+
+  // get index from matrix container
+  return m_matrix_container_1D_layer_negz->get_cell_index(ilayer);
+}
+
+//_____________________________________________________________________
+int TpcSpaceChargeReconstruction::get_cell_index_radius(const Acts::Vector3& loc)
+{
+  // get grid dimensions from matrix container
+  int rbins = 0;
+  m_matrix_container_1D_radius_negz->get_grid_dimensions(rbins);
+
+  // r
+  const auto r = get_r(loc(0), loc(1));
+  if (r < m_rmin || r >= m_rmax)
+  {
+    return -1;
+  }
+  const int ir = rbins * (r - m_rmin) / (m_rmax - m_rmin);
+
+
+  // get index from matrix container
+  return m_matrix_container_1D_radius_negz->get_cell_index(ir);
+}
+
+//_______________________________________________________________________________
+int TpcSpaceChargeReconstruction::get_cell_index_rz(const Acts::Vector3& loc)
+{
+  // get grid dimensions from matrix container
+  int pbins = 0;
+  int rbins = 0;
+  int zbins = 0;
+  m_matrix_container_2D_radius_z->get_grid_dimensions(pbins, rbins, zbins);
+
+  // r
+  const auto r = get_r(loc(0), loc(1));
+  if (r < m_rmin || r >= m_rmax)
+  {
+    return -1;
+  }
+  const int ir = rbins * (r - m_rmin) / (m_rmax - m_rmin);
+
+  // z
+  const auto z = loc(2);
+  if (z < m_zmin || z >= m_zmax)
+  {
+    return -1;
+  }
+  const int iz = zbins * (z - m_zmin) / (m_zmax - m_zmin);
+
+  // get index from matrix container
+  return m_matrix_container_2D_radius_z->get_cell_index(ir, iz);
 }

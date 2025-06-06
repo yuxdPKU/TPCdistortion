@@ -55,10 +55,10 @@ R__LOAD_LIBRARY(libTrackingDiagnostics.so)
 R__LOAD_LIBRARY(libtrackingqa.so)
 R__LOAD_LIBRARY(libtpcqa.so)
 void test(
-    const int nEvents = 10,
-    const std::string clusterfilename = "DST_TRKR_CLUSTER_run2pp_ana466_2024p012_v001-00053877-00000.root",
+    const int nEvents = 1,
+    const std::string clusterfilename = "DST_TRKR_CLUSTER_run2pp_ana466_2024p012_v001-00053877-00004.root",
     const std::string clusterdir = "/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana466_2024p012_v001/DST_TRKR_CLUSTER/run_00053800_00053900/dst/",
-    const std::string seedfilename = "DST_TRKR_SEED_run2pp_ana475_2024p018_v001-00053877-00000.root",
+    const std::string seedfilename = "DST_TRKR_SEED_run2pp_ana475_2024p018_v001-00053877-00004.root",
     const std::string seeddir = "/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana475_2024p018_v001/DST_TRKR_SEED/run_00053800_00053900/dst/",
     const std::string outdir = "root/",
     const std::string outfilename = "clusters_seeds",
@@ -159,9 +159,11 @@ void test(
   // The normal silicon association methods
   // Match the TPC track stubs from the CA seeder to silicon track stubs from PHSiliconTruthTrackSeeding
   auto silicon_match = new PHSiliconTpcTrackMatching;
-  silicon_match->Verbosity(0);
+  silicon_match->Verbosity(INT_MAX);
   silicon_match->set_use_legacy_windowing(false);
   silicon_match->set_pp_mode(TRACKING::pp_mode);
+  silicon_match->set_test_windows_printout(true);
+  silicon_match->print_windows(true);
   if(G4TPC::ENABLE_AVERAGE_CORRECTIONS)
     {
       // reset phi matching window to be centered on zero
@@ -174,6 +176,7 @@ void test(
 
   // Match TPC track stubs from CA seeder to clusters in the micromegas layers
   auto mm_match = new PHMicromegasTpcTrackMatching;
+  mm_match->Verbosity(INT_MAX);
   mm_match->Verbosity(0);
   mm_match->set_pp_mode(TRACKING::pp_mode);
   mm_match->set_rphi_search_window_lyr1(3.);
@@ -182,6 +185,7 @@ void test(
   mm_match->set_z_search_window_lyr2(3.);
 
   mm_match->set_min_tpc_layer(38);             // layer in TPC to start projection fit
+  mm_match->set_test_windows_printout(true);  // used for tuning search windows only
   mm_match->set_test_windows_printout(false);  // used for tuning search windows only
   se->registerSubsystem(mm_match);
 
@@ -330,10 +334,14 @@ void test(
   // se->registerOutputManager(out);
   if (Enable::QA)
   {
-    Distortions_QA();
+    //Distortions_QA();
+
+  auto qa = new QAG4SimulationDistortions();
+  qa->Verbosity(INT_MAX);
+  se->registerSubsystem(qa);
+
   }
-  //se->skip(540);
-  se->skip(110);
+  se->skip(6014);
   se->run(nEvents);
   se->End();
   se->PrintTimer();

@@ -127,6 +127,11 @@ class PHTpcResiduals : public SubsysReco
     m_useMicromegas = value;
   }
 
+  void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
+  void disableStaticCorr() { m_disable_static_corr = true; }
+  void disableAverageCorr() { m_disable_average_corr = true; }
+  void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
+
  private:
   using BoundTrackParam =
       const Acts::BoundTrackParameters;
@@ -223,6 +228,12 @@ class PHTpcResiduals : public SubsysReco
 
   /// require track near CM, only for 1D distortion map (layer or radius)
   bool m_requireCM = false;
+
+  /// disable distortion correction
+  bool m_disable_module_edge_corr = false;
+  bool m_disable_static_corr = false;
+  bool m_disable_average_corr = false;
+  bool m_disable_fluctuation_corr = false;
 
   /// output file
   std::string m_outputfile = "TpcSpaceChargeMatrices.root";

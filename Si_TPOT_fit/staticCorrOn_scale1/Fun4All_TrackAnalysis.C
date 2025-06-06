@@ -176,7 +176,8 @@ void Fun4All_TrackAnalysis(
   auto mm_match = new PHMicromegasTpcTrackMatching;
   mm_match->Verbosity(0);
   mm_match->set_pp_mode(TRACKING::pp_mode);
-  mm_match->set_rphi_search_window_lyr1(3.);
+  //mm_match->set_rphi_search_window_lyr1(3.);
+  mm_match->set_rphi_search_window_lyr1(1);//test value
   mm_match->set_rphi_search_window_lyr2(15.0);
   mm_match->set_z_search_window_lyr1(30.0);
   mm_match->set_z_search_window_lyr2(3.);
@@ -332,7 +333,6 @@ void Fun4All_TrackAnalysis(
   {
     Distortions_QA();
   }
-  se->skip(stepsize*index);
   se->run(nEvents);
   se->End();
   se->PrintTimer();
