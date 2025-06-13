@@ -25,7 +25,8 @@ void plot()
     //chain_Ben->Add(Form("../staticCorrOn_scale1_BenMap_2/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
     TChain* chain_Xudong = new TChain("residualtree");
     //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_5/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
-    chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_5/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
+    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_5/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
+    chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_6/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
     //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_4/root/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
     //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_4/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
     //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_3/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));

@@ -10,7 +10,7 @@ get_closest_numbers() {
 runspecies='run2pp'
 runtype='physics'
 anabuild='ana489'
-cdbtag='2024p018'
+cdbtag='2024p020'
 version='v001'
 
 path=/sphenix/lustre01/sphnxpro/production/${runspecies}/${runtype}/${anabuild}_${cdbtag}_${version}
@@ -30,10 +30,10 @@ do
   out=lamination_dst_list_${runs[$k]}
   > ${out}
 
-  NumDstPerJob=500
+  NumDstPerJob=100
   nseg=`ls ${path}/DST_TRKR_CLUSTER/run_000${numlower}_000${numupper}/dst/*${runs[$k]}* | wc -l`
   if [ "$NumDstPerJob" -gt "$nseg" ]; then
-    echo Total available number of segments less than 100, set to $nseg
+    echo Total available number of segments less than ${NumDstPerJob}, set to $nseg
     NumDstPerJob=${nseg}
   fi
 

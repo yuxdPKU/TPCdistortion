@@ -373,8 +373,10 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
     // check track quality
     if (!checkTrack(track))
     {
+      if (Verbosity() > 1) { std::cout << "failed track selection" << std::endl;}
       continue;
     }
+    if (Verbosity() > 1) { std::cout << "pass track selection" << std::endl;}
 
     // get seeeds
     auto tpcSeed = track->get_tpc_seed();
@@ -628,7 +630,7 @@ bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
 
   // ignore tracks with too few mvtx, intt tpc and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
-  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
+  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 3)
   {
     return false;
   }
@@ -640,17 +642,24 @@ bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
   {
     return false;
   }
-  if (count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
-  {
-    return false;
-  }
+//  if (count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
+//  {
+//    return false;
+//  }
 
   const auto state_keys(get_state_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(state_keys) < 3)
   {
     return false;
   }
-  //std::cout<<"event = "<<m_event<<" , tpc nclusters = "<<count_clusters<TrkrDefs::tpcId>(cluster_keys)<<" , nstates = "<<count_clusters<TrkrDefs::tpcId>(state_keys)<<std::endl;
+  if (count_clusters<TrkrDefs::inttId>(state_keys) < 2)
+  {
+    return false;
+  }
+//  if (count_clusters<TrkrDefs::micromegasId>(state_keys) < 2)
+//  {
+//    return false;
+//  }
 
   if (checkTPOTResidual(track)==false)
   {
@@ -673,6 +682,9 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
 
   bool flag = true;
 
+  int nTPOTcluster = 0;
+  int nTPOTstate = 0;
+  int TPOTtileID = -1;
   for (const auto& cluskey : get_cluster_keys(track))
   {
 
@@ -682,6 +694,8 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
     {
       continue;
     }
+    TPOTtileID = MicromegasDefs::getTileId(cluskey);
+    nTPOTcluster++;
 
     const auto cluster = m_clusterContainer->findCluster(cluskey);
 
@@ -711,6 +725,7 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
       }
       continue;
     }
+    nTPOTstate++;
 
     const auto crossing = track->get_crossing();
     assert(crossing != SHRT_MAX);
@@ -743,6 +758,7 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
     const double trackPhi = std::atan2(trackY, trackX);
 
     // Calculate residuals
+    // need to be calculated in local coordinates in the future
     const double drphi = clusR * deltaPhi(clusPhi - trackPhi);
     if (std::isnan(drphi))
     {
@@ -766,8 +782,41 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
                 << std::endl;
     }
 
-    // check rphi and z error
-    if (std::fabs(drphi)>0.1)
+    // check rphi residual for layer 55
+    if (layer==55 && std::fabs(drphi)>0.1)
+    {
+      flag = false;
+      break;
+    }
+
+    // check z residual for layer 56
+    if (layer==56 && std::fabs(dz)>1)
+    {
+      flag = false;
+      break;
+    }
+
+  }
+
+  if (flag)
+  {
+    // SCOZ has a half dead tile
+    // only require one TPOT cluster/state from SCOP
+    if (TPOTtileID==0)
+    {
+      if (nTPOTcluster<1 || nTPOTstate<1)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID>0)
+    {
+      if (nTPOTcluster<2 || nTPOTstate<2)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID<0)
     {
       flag = false;
     }

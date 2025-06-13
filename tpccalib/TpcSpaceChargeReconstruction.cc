@@ -22,6 +22,8 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 
+#include <micromegas/MicromegasDefs.h>
+
 #include <fun4all/Fun4AllReturnCodes.h>
 
 #include <phool/PHCompositeNode.h>
@@ -111,6 +113,20 @@ namespace
       {
         std::copy(seed->begin_cluster_keys(), seed->end_cluster_keys(), std::back_inserter(out));
       }
+    }
+    return out;
+  }
+
+  std::vector<TrkrDefs::cluskey> get_state_keys(SvtxTrack* track)
+  {
+    std::vector<TrkrDefs::cluskey> out;
+    for (auto state_iter = track->begin_states();
+         state_iter != track->end_states();
+         ++state_iter)
+    {
+      SvtxTrackState* tstate = state_iter->second;
+      auto stateckey = tstate->get_cluskey();
+      out.push_back(stateckey);
     }
     return out;
   }
@@ -422,20 +438,19 @@ void TpcSpaceChargeReconstruction::process_tracks()
 //_____________________________________________________________________
 bool TpcSpaceChargeReconstruction::accept_track(SvtxTrack* track) const
 {
-  // track pt
-  if (track->get_pt() < m_min_pt)
+  if (m_requireCrossing && track->get_crossing()!=0)
   {
     return false;
   }
 
-  if (m_requireCrossing && track->get_crossing()!=0)
+  if (track->get_pt() < m_min_pt)
   {
     return false;
   }
 
   // ignore tracks with too few mvtx, intt and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
-  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
+  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 3)
   {
     return false;
   }
@@ -447,10 +462,24 @@ bool TpcSpaceChargeReconstruction::accept_track(SvtxTrack* track) const
   {
     return false;
   }
-  if (m_use_micromegas && count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
+//  if (m_use_micromegas && count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
+//  {
+//    return false;
+//  }
+
+  const auto state_keys(get_state_keys(track));
+  if (count_clusters<TrkrDefs::mvtxId>(state_keys) < 3)
   {
     return false;
   }
+  if (count_clusters<TrkrDefs::inttId>(state_keys) < 2)
+  {
+    return false;
+  }
+//  if (m_use_micromegas && count_clusters<TrkrDefs::micromegasId>(state_keys) < 2)
+//  {
+//    return false;
+//  }
 
   if (m_use_micromegas && checkTPOTResidual(track)==false)
   {
@@ -466,6 +495,9 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
 {
   bool flag = true;
 
+  int nTPOTcluster = 0;
+  int nTPOTstate = 0;
+  int TPOTtileID = -1;
   for (const auto& cluskey : get_cluster_keys(track))
   {
 
@@ -475,6 +507,8 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
     {
       continue;
     }
+    TPOTtileID = MicromegasDefs::getTileId(cluskey);
+    nTPOTcluster++;
 
     const auto cluster = m_cluster_map->findCluster(cluskey);
 
@@ -504,6 +538,7 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
       }
       continue;
     }
+    nTPOTstate++;
 
     const auto crossing = track->get_crossing();
     assert(crossing != SHRT_MAX);
@@ -536,6 +571,7 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
     const double trackPhi = std::atan2(trackY, trackX);
 
     // Calculate residuals
+    // need to be calculated in local coordinates in the future
     const double drphi = clusR * delta_phi(clusPhi - trackPhi);
     if (std::isnan(drphi))
     {
@@ -556,11 +592,43 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
                 << std::endl;
     }
 
-    // check rphi and z error
-    if (std::fabs(drphi)>0.1)
+    // check rphi residual for layer 55
+    if (layer==55 && std::fabs(drphi)>0.1)
     {
       flag = false;
       break;
+    }
+
+    // check z residual for layer 56
+    if (layer==56 && std::fabs(dz)>1)
+    {
+      flag = false;
+      break;
+    }
+
+  }
+
+  if (flag)
+  {
+    // SCOZ has a half dead tile
+    // only require one TPOT cluster/state from SCOP
+    if (TPOTtileID==0)
+    {
+      if (nTPOTcluster<1 || nTPOTstate<1)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID>0)
+    {
+      if (nTPOTcluster<2 || nTPOTstate<2)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID<0)
+    {
+      flag = false;
     }
   }
 

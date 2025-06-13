@@ -60,8 +60,12 @@ void fit_2d_residual()
 
   for (int k=0; k<nrun; k++)
   {
-    TFile* infile = new TFile(Form("allqa_%d.root",runs[k]));
-    TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
+    //TFile* infile = new TFile(Form("allqa_%d.root",runs[k]));
+    //TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
+    TChain* intree = new TChain("h_QAG4SimulationDistortions_residTree");
+    for (int i=0; i<100; i++) {intree->Add(Form("../../Reconstructed/%d/clusters_seeds_%d-%d.root_qa.root",runs[k],runs[k],i));}
+    //intree->Add(Form("../../Reconstructed/%d/clusters_seeds_%d-0.root_qa.root",runs[k],runs[k]));
+    //intree->Add(Form("../../Reconstructed/%d/.root",runs[k]));
     float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
     float tanAlpha, tanBeta;
     float trackPt;

@@ -109,7 +109,6 @@ namespace
     return out;
   }
 
-  /*
   std::vector<TrkrDefs::cluskey> get_state_keys(SvtxTrack* track)
   {
     std::vector<TrkrDefs::cluskey> out;
@@ -123,7 +122,6 @@ namespace
     }
     return out;
   }
-  */
 
   /// return number of clusters of a given type that belong to a tracks
   template <int type>
@@ -284,9 +282,9 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
     return false;
   }
 
-  // ignore tracks with too few mvtx, intt tpc and micromegas hits
+  // ignore tracks with too few mvtx, intt and micromegas hits
   const auto cluster_keys(get_cluster_keys(track));
-  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 2)
+  if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < 3)
   {
     return false;
   }
@@ -298,28 +296,26 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
   {
     return false;
   }
-  if (m_useMicromegas && count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
-  {
-    return false;
-  }
+//  if (m_useMicromegas && count_clusters<TrkrDefs::micromegasId>(cluster_keys) < 2)
+//  {
+//    return false;
+//  }
 
-  /*
   const auto state_keys(get_state_keys(track));
-  int track_nmvtxstate = count_clusters<TrkrDefs::mvtxId>(state_keys);
-  //int track_ninttstate = count_clusters<TrkrDefs::inttId>(state_keys);
-  int track_ntpcstate = count_clusters<TrkrDefs::tpcId>(state_keys);
-  //int track_ntpotstate = count_clusters<TrkrDefs::micromegasId>(state_keys);
-  if (track_nmvtxstate<3)
+  if (count_clusters<TrkrDefs::mvtxId>(state_keys) < 3)
   {
     return false;
   }
-  if (track_ntpcstate>30)
+  if (count_clusters<TrkrDefs::inttId>(state_keys) < 2)
   {
     return false;
   }
-  */
+//  if (m_useMicromegas && count_clusters<TrkrDefs::micromegasId>(state_keys) < 2)
+//  {
+//    return false;
+//  }
 
-  if (checkTPOTResidual(track)==false)
+  if (m_useMicromegas && checkTPOTResidual(track)==false)
   {
     return false;
   }
@@ -332,6 +328,9 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
 {
   bool flag = true;
 
+  int nTPOTcluster = 0;
+  int nTPOTstate = 0;
+  int TPOTtileID = -1;
   for (const auto& cluskey : get_cluster_keys(track))
   {
 
@@ -341,6 +340,8 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
     {
       continue;
     }
+    TPOTtileID = MicromegasDefs::getTileId(cluskey);
+    nTPOTcluster++;
 
     const auto cluster = m_clusterContainer->findCluster(cluskey);
 
@@ -370,6 +371,7 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
       }
       continue;
     }
+    nTPOTstate++;
 
     const auto crossing = track->get_crossing();
     assert(crossing != SHRT_MAX);
@@ -402,6 +404,7 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
     const double trackPhi = std::atan2(trackY, trackX);
 
     // Calculate residuals
+    // need to be calculated in local coordinates in the future
     const double drphi = clusR * deltaPhi(clusPhi - trackPhi);
     if (std::isnan(drphi))
     {
@@ -422,11 +425,43 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
                 << std::endl;
     }
 
-    // check rphi and z error
-    if (std::fabs(drphi)>0.1)
+    // check rphi residual for layer 55
+    if (layer==55 && std::fabs(drphi)>0.1)
     {
       flag = false;
       break;
+    }
+
+    // check z residual for layer 56
+    if (layer==56 && std::fabs(dz)>1)
+    {
+      flag = false;
+      break;
+    }
+
+  }
+
+  if (flag)
+  {
+    // SCOZ has a half dead tile
+    // only require one TPOT cluster/state from SCOP
+    if (TPOTtileID==0)
+    {
+      if (nTPOTcluster<1 || nTPOTstate<1)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID>0)
+    {
+      if (nTPOTcluster<2 || nTPOTstate<2)
+      {
+        flag = false;
+      }
+    }
+    else if (TPOTtileID<0)
+    {
+      flag = false;
     }
   }
 
@@ -541,7 +576,6 @@ void PHTpcResiduals::processTrack(SvtxTrack* track)
     //auto result = propagator.propagateTrack(trackParams, surface);//surface aborter
     auto result = propagator.propagateTrack(trackParams, layer);//layer aborter
 
-    //std::cout<<"layer = "<<layer<<" , propagation failure or not: "<<result.ok()<<std::endl;
     // skip if propagation failed
     if (!result.ok())
     {

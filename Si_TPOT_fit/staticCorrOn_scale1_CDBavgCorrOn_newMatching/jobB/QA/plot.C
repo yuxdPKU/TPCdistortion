@@ -59,8 +59,10 @@ void plot()
 
   for (int k=0; k<nrun; k++)
   {
-    TFile* infile = new TFile(Form("allqa_%d.root",runs[k]));
-    TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
+    //TFile* infile = new TFile(Form("allqa_%d.root",runs[k]));
+    //TTree* intree = (TTree*) infile->Get("h_QAG4SimulationDistortions_residTree");
+    TChain* intree = new TChain("h_QAG4SimulationDistortions_residTree");
+    intree->Add(Form("../../Reconstructed/%d/*qa.root",runs[k]));
     float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
     float tanAlpha, tanBeta;
     float trackPt;

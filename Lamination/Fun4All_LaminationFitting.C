@@ -41,11 +41,11 @@ bool isGood(const string &infile);
 
 void Fun4All_LaminationFitting(
     const int nEvents = 0,
-    const int runnumber = 54966,
-    const std::string &filelist = "lamination_dst_list_54966",
+    const int runnumber = 53018,
+    const std::string &filelist = "lamination_dst_list_53018",
     const std::string &outfilename = "LAMINATION_Fit",
     const std::string &outdir = "./",
-    bool ppmode = false
+    bool ppmode = true
 )
 {
   auto se = Fun4AllServer::instance();
@@ -84,6 +84,28 @@ void Fun4All_LaminationFitting(
   ingeo->AddFile(geofile);
   se->registerInputManager(ingeo);
 
+  G4TPC::ENABLE_MODULE_EDGE_CORRECTIONS = true;
+  //to turn on the default static corrections, enable the two lines below
+  G4TPC::ENABLE_STATIC_CORRECTIONS = true;
+
+  if(runnumber == 53098)
+  {
+    G4TPC::ENABLE_STATIC_CORRECTIONS = false;
+  }
+
+  G4TPC::USE_PHI_AS_RAD_STATIC_CORRECTIONS=false;
+
+  G4TPC::ENABLE_AVERAGE_CORRECTIONS = false;
+  //G4TPC::average_correction_filename = std::string(Form("/sphenix/tg/tg01/jets/bkimelman/BenProduction/Feb25_2025/Laminations_run2pp_ana466_2024p012_v001-%08d.root",runnumber));
+  //G4TPC::USE_PHI_AS_RAD_AVERAGE_CORRECTIONS=false;
+  //G4TPC::average_correction_interpolate = false;
+
+  //G4TPC::DISTORTIONS_USE_PHI_AS_RADIANS = false;
+
+  //TRACKING::reco_tpc_maxtime_sample = 1023;
+
+  G4TPC::laser_adc_threshold = 100;
+
   TpcReadoutInit( runnumber );
   std::cout << " run: " << runnumber
             << " samples: " << TRACKING::reco_tpc_maxtime_sample
@@ -95,6 +117,10 @@ void Fun4All_LaminationFitting(
   TString laminationoutfile = theOutfile + ".root";
   std::string laminationstring(laminationoutfile.Data());
   G4TPC::LaminationOutputName = laminationstring;
+
+  TString laminationqafile = theOutfile + "_qa.pdf";
+  std::string laminationqastring(laminationqafile.Data());
+  G4TPC::LaminationFitName = laminationqastring;
 
   G4MAGNET::magfield_rescale = 1;
   TrackingInit();

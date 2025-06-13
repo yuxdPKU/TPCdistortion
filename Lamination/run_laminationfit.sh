@@ -24,5 +24,5 @@ outfilename=$4
 outdir=$5
 ppmode=$6
 
-root.exe -q -b Fun4All_LaminationFitting.C\($nEvents,$runnumber,\"${filelist}\",\"${outfilename}\",\"${outdir}\",$ppmode\)
+root.exe -n -q -b Fun4All_LaminationFitting.C\($nEvents,$runnumber,\"${filelist}\",\"${outfilename}\",\"${outdir}\",$ppmode\)
 echo Script done

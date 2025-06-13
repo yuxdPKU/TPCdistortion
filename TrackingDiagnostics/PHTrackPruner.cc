@@ -130,11 +130,13 @@ int PHTrackPruner::process_event(PHCompositeNode * /*unused*/)
     {
       continue;
     }
+    if (Verbosity() > 1) { std::cout<<"Pass track selection"<<std::endl; }
 
     _tpc_seed = _svtx_track->get_tpc_seed();
     _si_seed = _svtx_track->get_silicon_seed();
     if (_tpc_seed && _si_seed)
     {
+      if (Verbosity() > 1) { std::cout<<"Insert tpcid and siid into good_matches"<<std::endl; }
       int tpcid = _tpc_seed_map->find(_tpc_seed);
       int siid = _si_seed_map->find(_si_seed);
       good_matches.insert(std::make_pair(tpcid, siid));
@@ -143,6 +145,7 @@ int PHTrackPruner::process_event(PHCompositeNode * /*unused*/)
 
   for (auto [tpcid, siid] : good_matches)
   {
+      if (Verbosity() > 1) { std::cout<<"Insert pruned svtx seed map"<<std::endl; }
     auto _svtx_seed = std::make_unique<SvtxTrackSeed_v2>();
     _svtx_seed->set_silicon_seed_index(siid);
     _svtx_seed->set_tpc_seed_index(tpcid);
@@ -180,18 +183,21 @@ bool PHTrackPruner::checkTrack(SvtxTrack *track)
 {
   if(!track)
   {
+    if (Verbosity() > 1) { std::cout<<"invalid track"<<std::endl; }
     return false;
   }
 
   //pt cut
   if(track->get_pt() < m_track_pt_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"Track pt "<<track->get_pt()<<" , pt cut "<<m_track_pt_low_cut<<std::endl; }
     return false;
   }
 
   //quality cut
   if(track->get_quality() > m_track_quality_high_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"Track quality "<<track->get_quality()<<" , quality cut "<<m_track_quality_high_cut<<std::endl; }
     return false;
   }
 
@@ -199,18 +205,22 @@ bool PHTrackPruner::checkTrack(SvtxTrack *track)
   const auto cluster_keys(get_cluster_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(cluster_keys) < m_nmvtx_clus_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"nmvtx "<<count_clusters<TrkrDefs::mvtxId>(cluster_keys)<<" , nmvtx cut "<<m_nmvtx_clus_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::inttId>(cluster_keys) < m_nintt_clus_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"nintt "<<count_clusters<TrkrDefs::inttId>(cluster_keys)<<" , nintt cut "<<m_nintt_clus_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::tpcId>(cluster_keys) < m_ntpc_clus_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"ntpc "<<count_clusters<TrkrDefs::tpcId>(cluster_keys)<<" , ntpc cut "<<m_ntpc_clus_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::micromegasId>(cluster_keys) < m_ntpot_clus_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"nmicromegas "<<count_clusters<TrkrDefs::micromegasId>(cluster_keys)<<" , nmicromegas cut "<<m_ntpot_clus_low_cut<<std::endl; }
     return false;
   }
 
@@ -218,18 +228,22 @@ bool PHTrackPruner::checkTrack(SvtxTrack *track)
   const auto state_keys(get_state_keys(track));
   if (count_clusters<TrkrDefs::mvtxId>(state_keys) < m_nmvtx_states_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"nmvtxstates "<<count_clusters<TrkrDefs::mvtxId>(state_keys)<<" , nmvtxstates cut "<<m_nmvtx_states_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::inttId>(state_keys) < m_nintt_states_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"ninttstates "<<count_clusters<TrkrDefs::inttId>(state_keys)<<" , ninttstates cut "<<m_nintt_states_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::tpcId>(state_keys) < m_ntpc_states_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"ntpcstates "<<count_clusters<TrkrDefs::tpcId>(state_keys)<<" , ntpcstates cut "<<m_ntpc_states_low_cut<<std::endl; }
     return false;
   }
   if (count_clusters<TrkrDefs::micromegasId>(state_keys) < m_ntpot_states_low_cut)
   {
+    if (Verbosity() > 1) { std::cout<<"nmicromegasstates "<<count_clusters<TrkrDefs::micromegasId>(state_keys)<<" , nmicromegasstates cut "<<m_ntpot_states_low_cut<<std::endl; }
     return false;
   }
 

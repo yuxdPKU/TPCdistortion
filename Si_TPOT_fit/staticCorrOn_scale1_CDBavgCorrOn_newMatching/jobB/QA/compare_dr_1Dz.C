@@ -14,7 +14,7 @@ int runs[nrun] = {53877};
 TH1 *h1_R_rphi_posz[nrun], *h1_R_zr_posz[nrun], *h1_R_matrix_posz[nrun];
 TH1 *h1_R_rphi_negz[nrun], *h1_R_zr_negz[nrun], *h1_R_matrix_negz[nrun];
 
-TFile* infile_raw = new TFile(Form("hist_dr_1Dz_R%d.root",(int)selectR));
+TFile* infile_raw = new TFile(Form("hist_residual_1Dz_R%d.root",(int)selectR));
 infile_raw->cd();
 for (int i=0; i<nrun; i++)
 {

@@ -47,7 +47,7 @@ Nevent         = -1
 RunNumber      = 53517
 FileList       = $(Initialdir)/lamination_dst_list_$(RunNumber)
 OutFileName    = LAMINATION_FITTING
-OutDir         = /sphenix/u/xyu3/hftg01/Lamination_DST/LaminationFitOut_0606/
+OutDir         = /sphenix/u/xyu3/hftg01/Lamination_DST/LaminationFitOut_0607/
 PPMode         = true
 
 # The argument to pass to the executable.
