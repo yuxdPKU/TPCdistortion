@@ -1,0 +1,456 @@
+namespace
+{
+
+  // square
+  template <class T>
+  inline constexpr T square(const T& x)
+  {
+    return x * x;
+  }
+
+  template <class T>
+  inline constexpr T deltaPhi(const T& phi)
+  {
+    if (phi > M_PI)
+    {
+      return phi - 2. * M_PI;
+    }
+    else if (phi <= -M_PI)
+    {
+      return phi + 2. * M_PI;
+    }
+    else
+    {
+      return phi;
+    }
+  }
+
+}
+
+float getPhi(float phi)
+{
+  float m_phiMin = 0;
+  float m_phiMax = 2. * M_PI;
+  while (phi < m_phiMin)
+  {
+    phi += 2. * M_PI;
+  }
+  while (phi >= m_phiMax)
+  {
+    phi -= 2. * M_PI;
+  }
+  return phi;
+}
+
+void AddPointToGraph(TGraph* graph, double x, double y) {
+    int n = graph->GetN();
+    graph->SetPoint(n, x, y);
+}
+
+void AddPointToGraphErrors(TGraphErrors* graph, double x, double y, double ex = 0., double ey = 0.) {
+    int n = graph->GetN();
+    graph->SetPoint(n, x, y);
+    graph->SetPointError(n, ex, ey);
+}
+
+void fit_2d_residual()
+{
+  int verbosity = 0;
+  gStyle->SetOptStat(0);
+  TGaxis::SetMaxDigits(3);
+
+  const int nrun = 1;
+  int runs[nrun] = {53877};
+
+  TFile* file_3D_map[nrun];
+  TH3 *h_N_prz_pos[nrun], *h_N_prz_neg[nrun];
+
+  for (int k=0; k<nrun; k++)
+  {
+
+    TChain* intree = new TChain("h_QAG4SimulationDistortions_residTree");
+    for (int i=0; i<1000; i++) {intree->Add(Form("../../../Reconstructed/%d/clusters_seeds_%d-%d.root_qa.root",runs[k],runs[k],i));}
+    float drphi, dz, clusZErr, stateZErr, clusZ, clusR, clusRPhiErr, stateRPhiErr, clusPhi;
+    float tanAlpha, tanBeta;
+    float trackPt;
+    int layer, charge;
+    int track_nmvtx, track_nintt, track_ntpc, track_ntpot;
+    int track_nmvtxstate, track_ninttstate, track_ntpcstate, track_ntpotstate;
+    intree->SetCacheSize(0);
+    intree->SetBranchStatus("*", 0);
+    intree->SetBranchAddress("dz",&dz);
+    intree->SetBranchAddress("drphi",&drphi);
+    intree->SetBranchAddress("clusZErr",&clusZErr);
+    intree->SetBranchAddress("stateZErr",&stateZErr);
+    intree->SetBranchAddress("clusZ",&clusZ);
+    intree->SetBranchAddress("clusR",&clusR);
+    intree->SetBranchAddress("clusPhi",&clusPhi);
+    intree->SetBranchAddress("clusRPhiErr",&clusRPhiErr);
+    intree->SetBranchAddress("stateRPhiErr",&stateRPhiErr);
+    intree->SetBranchAddress("tanAlpha",&tanAlpha);
+    intree->SetBranchAddress("trackPt",&trackPt);
+    intree->SetBranchAddress("tanBeta",&tanBeta);
+    intree->SetBranchAddress("layer",&layer);
+    intree->SetBranchAddress("charge",&charge);
+    intree->SetBranchAddress("track_nmvtx",&track_nmvtx);
+    intree->SetBranchAddress("track_nintt",&track_nintt);
+    intree->SetBranchAddress("track_ntpc",&track_ntpc);
+    intree->SetBranchAddress("track_ntpot",&track_ntpot);
+    intree->SetBranchAddress("track_nmvtxstate",&track_nmvtxstate);
+    intree->SetBranchAddress("track_ninttstate",&track_ninttstate);
+    intree->SetBranchAddress("track_ntpcstate",&track_ntpcstate);
+    intree->SetBranchAddress("track_ntpotstate",&track_ntpotstate);
+
+    file_3D_map[k] = new TFile(Form("../../Rootfiles/Distortions_full_mm_%d.root",runs[k]),"");
+    h_N_prz_pos[k] = (TH3*) file_3D_map[k]->Get("hentries_posz");
+    h_N_prz_neg[k] = (TH3*) file_3D_map[k]->Get("hentries_negz");
+
+    int pnbins = h_N_prz_pos[k]->GetNbinsX();
+    double pmin = h_N_prz_pos[k]->GetXaxis()->GetXmin();
+    double pmax = h_N_prz_pos[k]->GetXaxis()->GetXmax();
+
+    int rnbins = h_N_prz_pos[k]->GetNbinsY();
+    double rmin = h_N_prz_pos[k]->GetYaxis()->GetXmin();
+    double rmax = h_N_prz_pos[k]->GetYaxis()->GetXmax();
+
+    int znbins_posz = h_N_prz_pos[k]->GetNbinsZ();
+    double zmin_posz = h_N_prz_pos[k]->GetZaxis()->GetXmin();
+    double zmax_posz = h_N_prz_pos[k]->GetZaxis()->GetXmax();
+
+    int znbins_negz = h_N_prz_neg[k]->GetNbinsZ();
+    double zmin_negz = h_N_prz_neg[k]->GetZaxis()->GetXmin();
+    double zmax_negz = h_N_prz_neg[k]->GetZaxis()->GetXmax();
+
+    //double phi_tiles = ((-1.73246)+(-1.43608))/2.+2*TMath::Pi(); //central
+    //double phi_tiles = ((-2.26272)+(-1.96089))/2.+2*TMath::Pi(); //east
+    double phi_tiles = ((-1.21241)+(-0.909953))/2.+2*TMath::Pi(); //west
+
+    int phi_bin_index = h_N_prz_pos[k]->GetXaxis()->FindBin(phi_tiles);
+    double phiLow = h_N_prz_pos[k]->GetXaxis()->GetBinLowEdge(phi_bin_index);
+    double phiUp = h_N_prz_pos[k]->GetXaxis()->GetBinWidth(phi_bin_index) + phiLow;
+
+    std::vector<float> selectRs={75, 70, 65, 60, 55, 50, 45, 40, 35, 30};
+    const int nRslides = selectRs.size();
+    const int nZslides_posz = znbins_posz;
+    const int nZslides_negz = znbins_negz;
+
+    for (int ir=0; ir<nRslides; ir++)
+    {
+
+      TGraphErrors* gr_drphi_tanAlpha_posz[nZslides_posz];
+      TGraphErrors* gr_drphi_tanAlpha_negz[nZslides_negz];
+      TGraphErrors* gr_dz_tanBeta_posz[nZslides_posz];
+      TGraphErrors* gr_dz_tanBeta_negz[nZslides_negz];
+      for (int j = 0; j < nZslides_posz; j++)
+      {
+        gr_drphi_tanAlpha_posz[j] = new TGraphErrors();
+        gr_dz_tanBeta_posz[j] = new TGraphErrors();
+      }
+      for (int j = 0; j < nZslides_negz; j++)
+      {
+        gr_drphi_tanAlpha_negz[j] = new TGraphErrors();
+        gr_dz_tanBeta_negz[j] = new TGraphErrors();
+      }
+
+      double selectR = selectRs[ir];
+      int r_bin_index = h_N_prz_pos[k]->GetYaxis()->FindBin(selectR);
+      double rLow = h_N_prz_pos[k]->GetYaxis()->GetBinLowEdge(r_bin_index);
+      double rUp = h_N_prz_pos[k]->GetYaxis()->GetBinWidth(r_bin_index) + rLow;
+
+      int nevent = intree->GetEntries();
+      for (int i=0; i<nevent; i++)
+      {
+        if (i % (Long64_t)(nevent / 10) == 0) std::cout << "progress: " << i / (Long64_t)(nevent / 10) << "0%" << std::endl;
+          intree->GetEntry(i);
+          double erp = square(clusRPhiErr) + square(stateRPhiErr);
+          double ez = square(clusZErr) + square(stateZErr);
+          if (sqrt(erp) < 0.005) continue; if (sqrt(ez) < 0.01) continue;
+          if (std::abs(tanAlpha) > 0.6 || std::abs(drphi) > 2) continue;
+          if (std::abs(tanBeta) > 1.5 || std::abs(dz) > 5) continue;
+          if (track_nmvtxstate<3) continue;
+          if (track_ninttstate<2) continue;
+          if (track_ntpc<35) continue;
+          if (track_ntpotstate<1) continue;
+
+          if ((clusPhi+2*TMath::Pi()) < phiLow || (clusPhi+2*TMath::Pi()) > phiUp)
+          {
+            continue;
+          }
+
+          if (clusR < rLow || clusR > rUp)
+          {
+            continue;
+          }
+
+          if (clusZ>0)
+          {
+            int z_bin_index = h_N_prz_pos[k]->GetZaxis()->FindBin(clusZ);
+            if (z_bin_index < 1 || z_bin_index > nZslides_posz)
+            {
+              continue;
+            }
+
+            double zLow = h_N_prz_pos[k]->GetZaxis()->GetBinLowEdge(z_bin_index);
+            double zUp = h_N_prz_pos[k]->GetZaxis()->GetBinWidth(z_bin_index) + zLow;
+
+	    AddPointToGraphErrors(gr_drphi_tanAlpha_posz[z_bin_index-1], tanAlpha, drphi, 0, sqrt(erp));
+	    AddPointToGraphErrors(gr_dz_tanBeta_posz[z_bin_index-1], tanBeta, dz, 0, sqrt(ez));
+          }
+          else if (clusZ<0)
+          {
+            int z_bin_index = h_N_prz_neg[k]->GetZaxis()->FindBin(clusZ);
+            if (z_bin_index < 1 || z_bin_index > nZslides_negz)
+            {
+              continue;
+            }
+
+	    AddPointToGraphErrors(gr_drphi_tanAlpha_negz[z_bin_index-1], tanAlpha, drphi, 0, sqrt(erp));
+	    AddPointToGraphErrors(gr_dz_tanBeta_negz[z_bin_index-1], tanBeta, dz, 0, sqrt(ez));
+          }
+      }
+
+      TF1 *fit_drphi_tanAlpha_posz[nZslides_posz];
+      TF1 *fit_drphi_tanAlpha_negz[nZslides_negz];
+      TF1 *fit_dz_tanBeta_posz[nZslides_posz];
+      TF1 *fit_dz_tanBeta_negz[nZslides_negz];
+
+      for (int j = 0; j < nZslides_posz; j++)
+      {
+        double zLow = h_N_prz_pos[k]->GetZaxis()->GetBinLowEdge(j);
+        double zUp = h_N_prz_pos[k]->GetZaxis()->GetBinWidth(j) + zLow;
+
+        gr_drphi_tanAlpha_posz[j]->SetNameTitle(Form("gr_drphi_tanAlpha_posz_R%d_Z%d", ir, j),
+          Form("R#in[%.1f,%.1f), Z#in[%.1f,%.1f);tan#alpha;drphi (cm)", 
+          rLow, rUp, zLow, zUp));
+
+        gr_dz_tanBeta_posz[j]->SetNameTitle(Form("gr_dz_tanBeta_posz_R%d_Z%d", ir, j),
+          Form("R#in[%.1f,%.1f), Z#in[%.1f,%.1f);tan#beta;dz (cm)", 
+          rLow, rUp, zLow, zUp));
+
+        // Create a linear function for fitting: y = a*x + b
+
+        fit_drphi_tanAlpha_posz[j] = new TF1(Form("fit_drphi_tanAlpha_posz_R%d_Z%d",ir,j), "[0]*x + [1]", -0.5, 0.5);
+        fit_drphi_tanAlpha_posz[j]->SetParNames("Slope", "Intercept");
+        fit_drphi_tanAlpha_posz[j]->SetParameters(0, 0); // Initial parameter guesses
+        fit_drphi_tanAlpha_posz[j]->SetLineColor(kRed);
+
+        fit_dz_tanBeta_posz[j] = new TF1(Form("fit_dz_tanBeta_posz_R%d_Z%d",ir,j), "[0]*x + [1]", -0.5, 0.5);
+        fit_dz_tanBeta_posz[j]->SetParNames("Slope", "Intercept");
+        fit_dz_tanBeta_posz[j]->SetParameters(0, 0); // Initial parameter guesses
+        fit_dz_tanBeta_posz[j]->SetLineColor(kRed);
+
+	// Perform the fit (equal weights for all points)
+        gr_drphi_tanAlpha_posz[j]->Fit(Form("fit_drphi_tanAlpha_posz_R%d_Z%d",ir,j), "Q"); // "Q" for quiet mode
+        gr_dz_tanBeta_posz[j]->Fit(Form("fit_dz_tanBeta_posz_R%d_Z%d",ir,j), "Q"); // "Q" for quiet mode
+
+        if (verbosity>1)
+        {
+          TCanvas *can_drphi_tanAlpha_posz = new TCanvas("can_drphi_tanAlpha_posz","",800,600);
+          gr_drphi_tanAlpha_posz[j]->SetMarkerStyle(20);
+          gr_drphi_tanAlpha_posz[j]->SetMarkerColor(kBlack);
+          gr_drphi_tanAlpha_posz[j]->Draw("AP");
+          fit_drphi_tanAlpha_posz[j]->Draw("same");
+          can_drphi_tanAlpha_posz->Update();
+          can_drphi_tanAlpha_posz->SaveAs(Form("figure/%d_drphi_tanAlpha_posz_R%d_Z%d.pdf",runs[k],ir,j));
+
+          TCanvas *can_dz_tanBeta_posz = new TCanvas("can_dz_tanBeta_posz","",800,600);
+          gr_dz_tanBeta_posz[j]->SetMarkerStyle(20);
+          gr_dz_tanBeta_posz[j]->SetMarkerColor(kBlack);
+          gr_dz_tanBeta_posz[j]->Draw("AP");
+          fit_dz_tanBeta_posz[j]->Draw("same");
+          can_dz_tanBeta_posz->Update();
+          can_dz_tanBeta_posz->SaveAs(Form("figure/%d_dz_tanBeta_posz_R%d_Z%d.pdf",runs[k],ir,j));
+        }
+
+      }
+
+      for (int j = 0; j < nZslides_negz; j++)
+      {
+        double zLow = h_N_prz_neg[k]->GetZaxis()->GetBinLowEdge(j);
+        double zUp = h_N_prz_neg[k]->GetZaxis()->GetBinWidth(j) + zLow;
+
+        gr_drphi_tanAlpha_negz[j]->SetNameTitle(Form("gr_drphi_tanAlpha_negz_R%d_Z%d", ir, j),
+          Form("R#in[%.1f,%.1f), Z#in[%.1f,%.1f);tan#alpha;drphi (cm)", 
+          rLow, rUp, zLow, zUp));
+
+        gr_dz_tanBeta_negz[j]->SetNameTitle(Form("gr_dz_tanBeta_negz_R%d_Z%d", ir, j),
+          Form("R#in[%.1f,%.1f), Z#in[%.1f,%.1f);tan#beta;dz (cm)", 
+      	  rLow, rUp, zLow, zUp));
+
+        fit_drphi_tanAlpha_negz[j] = new TF1(Form("fit_drphi_tanAlpha_negz_R%d_Z%d",ir,j), "[0]*x + [1]", -0.5, 0.5);
+        fit_drphi_tanAlpha_negz[j]->SetParNames("Slope", "Intercept");
+        fit_drphi_tanAlpha_negz[j]->SetParameters(0, 0); // Initial parameter guesses
+        fit_drphi_tanAlpha_negz[j]->SetLineColor(kRed);
+
+        fit_dz_tanBeta_negz[j] = new TF1(Form("fit_dz_tanBeta_negz_R%d_Z%d",ir,j), "[0]*x + [1]", -0.5, 0.5);
+        fit_dz_tanBeta_negz[j]->SetParNames("Slope", "Intercept");
+        fit_dz_tanBeta_negz[j]->SetParameters(0, 0); // Initial parameter guesses
+        fit_dz_tanBeta_negz[j]->SetLineColor(kRed);
+
+        // Perform the fit (equal weights for all points)
+        gr_drphi_tanAlpha_negz[j]->Fit(Form("fit_drphi_tanAlpha_negz_R%d_Z%d",ir,j), "Q"); // "Q" for quiet mode
+        gr_dz_tanBeta_negz[j]->Fit(Form("fit_dz_tanBeta_negz_R%d_Z%d",ir,j), "Q"); // "Q" for quiet mode
+
+        if (verbosity>1)
+        {
+          TCanvas *can_drphi_tanAlpha_negz = new TCanvas("can_drphi_tanAlpha_negz","",800,600);
+          gr_drphi_tanAlpha_negz[j]->SetMarkerStyle(20);
+          gr_drphi_tanAlpha_negz[j]->SetMarkerColor(kBlack);
+          gr_drphi_tanAlpha_negz[j]->Draw("AP");
+          fit_drphi_tanAlpha_negz[j]->Draw("same");
+          can_drphi_tanAlpha_negz->Update();
+          can_drphi_tanAlpha_negz->SaveAs(Form("figure/%d_drphi_tanAlpha_negz_R%d_Z%d.pdf",runs[k],ir,j));
+
+          TCanvas *can_dz_tanBeta_negz = new TCanvas("can_dz_tanBeta_negz","",800,600);
+          gr_dz_tanBeta_negz[j]->SetMarkerStyle(20);
+          gr_dz_tanBeta_negz[j]->SetMarkerColor(kBlack);
+          gr_dz_tanBeta_negz[j]->Draw("AP");
+          fit_dz_tanBeta_negz[j]->Draw("same");
+          can_dz_tanBeta_negz->Update();
+          can_dz_tanBeta_negz->SaveAs(Form("figure/%d_dz_tanBeta_negz_R%d_Z%d.pdf",runs[k],ir,j));
+        }
+
+      }
+
+      TH1* h_dr_rphi_posz = new TH1D("h_dr_rphi_posz","dR distortion from R-#phi plane (posz);Z (cm);dR (cm)",znbins_posz,zmin_posz,zmax_posz);
+      h_dr_rphi_posz->SetLineColor(kRed);
+      TH1* h_dphi_rphi_posz = new TH1D("h_dphi_rphi_posz","dphi distortion from R-#phi plane (posz);Z (cm);dphi (cm)",znbins_posz,zmin_posz,zmax_posz);
+      TH1* h_dr_zr_posz = new TH1D("h_dr_zr_posz","dR distortion from Z-R plane (posz);Z (cm);dR (cm)",znbins_posz,zmin_posz,zmax_posz);
+      h_dr_zr_posz->SetLineColor(kBlue);
+      TH1* h_dz_zr_posz = new TH1D("h_dz_zr_posz","dz distortion from Z-R plane (posz);Z (cm);dZ (cm)",znbins_posz,zmin_posz,zmax_posz);
+
+      for (int j=1; j<=nZslides_posz; j++)
+      {
+        h_dr_rphi_posz->SetBinContent(j,fit_drphi_tanAlpha_posz[j-1]->GetParameter(0));
+        h_dr_rphi_posz->SetBinError(j,fit_drphi_tanAlpha_posz[j-1]->GetParError(0));
+
+        h_dphi_rphi_posz->SetBinContent(j,fit_drphi_tanAlpha_posz[j-1]->GetParameter(1) / selectRs[ir]);
+        h_dphi_rphi_posz->SetBinError(j,fit_drphi_tanAlpha_posz[j-1]->GetParError(1) / selectRs[ir]);
+
+        h_dr_zr_posz->SetBinContent(j,fit_dz_tanBeta_posz[j-1]->GetParameter(0));
+        h_dr_zr_posz->SetBinError(j,fit_dz_tanBeta_posz[j-1]->GetParError(0));
+
+        h_dz_zr_posz->SetBinContent(j,fit_dz_tanBeta_posz[j-1]->GetParameter(1));
+        h_dz_zr_posz->SetBinError(j,fit_dz_tanBeta_posz[j-1]->GetParError(1));
+      }
+
+      TH1* h_dr_rphi_negz = new TH1D("h_dr_rphi_negz","dR distortion from R-#phi plane (negz);Z (cm);dR (cm)",znbins_negz,zmin_negz,zmax_negz);
+      h_dr_rphi_negz->SetLineColor(kRed);
+      TH1* h_dphi_rphi_negz = new TH1D("h_dphi_rphi_negz","dphi distortion from R-#phi plane (negz);Z (cm);dphi (cm)",znbins_negz,zmin_negz,zmax_negz);
+      TH1* h_dr_zr_negz = new TH1D("h_dr_zr_negz","dR distortion from Z-R plane (negz);Z (cm);dR (cm)",znbins_negz,zmin_negz,zmax_negz);
+      h_dr_zr_negz->SetLineColor(kBlue);
+      TH1* h_dz_zr_negz = new TH1D("h_dz_zr_negz","dz distortion from Z-R plane (negz);Z (cm);dZ (cm)",znbins_negz,zmin_negz,zmax_negz);
+
+      for (int j=1; j<=nZslides_negz; j++)
+      {
+        h_dr_rphi_negz->SetBinContent(j,fit_drphi_tanAlpha_negz[j-1]->GetParameter(0));
+        h_dr_rphi_negz->SetBinError(j,fit_drphi_tanAlpha_negz[j-1]->GetParError(0));
+
+        h_dphi_rphi_negz->SetBinContent(j,fit_drphi_tanAlpha_negz[j-1]->GetParameter(1) / selectRs[ir]);
+        h_dphi_rphi_negz->SetBinError(j,fit_drphi_tanAlpha_negz[j-1]->GetParError(1) / selectRs[ir]);
+
+        h_dr_zr_negz->SetBinContent(j,fit_dz_tanBeta_negz[j-1]->GetParameter(0));
+        h_dr_zr_negz->SetBinError(j,fit_dz_tanBeta_negz[j-1]->GetParError(0));
+
+        h_dz_zr_negz->SetBinContent(j,fit_dz_tanBeta_negz[j-1]->GetParameter(1));
+        h_dz_zr_negz->SetBinError(j,fit_dz_tanBeta_negz[j-1]->GetParError(1));
+      }
+
+      TCanvas *can = new TCanvas("can","",2400,1200);
+      can->Divide(3,2);
+      can->cd(1);
+      h_dphi_rphi_posz->Draw("hist,e");
+      can->cd(2);
+      //if (h_dr_rphi_posz->GetMaximum() < h_dr_zr_posz->GetMaximum()) h_dr_rphi_posz->SetMaximum(h_dr_zr_posz->GetMaximum());
+      //if (h_dr_rphi_posz->GetMinimum() < h_dr_zr_posz->GetMinimum()) h_dr_rphi_posz->SetMinimum(h_dr_zr_posz->GetMinimum());
+      h_dr_rphi_posz->SetMaximum(2);
+      h_dr_rphi_posz->SetMinimum(-2);
+      h_dr_rphi_posz->Draw("hist,e");
+      h_dr_zr_posz->Draw("hist,e,same");
+      can->cd(3);
+      h_dz_zr_posz->Draw("hist,e");
+      can->cd(4);
+      h_dphi_rphi_negz->Draw("hist,e");
+      can->cd(5);
+      //if (h_dr_rphi_negz->GetMaximum() < h_dr_zr_negz->GetMaximum()) h_dr_rphi_negz->SetMaximum(h_dr_zr_negz->GetMaximum());
+      //if (h_dr_rphi_negz->GetMinimum() < h_dr_zr_negz->GetMinimum()) h_dr_rphi_negz->SetMinimum(h_dr_zr_negz->GetMinimum());
+      h_dr_rphi_negz->SetMaximum(2);
+      h_dr_rphi_negz->SetMinimum(-2);
+      h_dr_rphi_negz->Draw("hist,e");
+      h_dr_zr_negz->Draw("hist,e,same");
+      can->cd(6);
+      h_dz_zr_negz->Draw("hist,e");
+      can->Update();
+      can->Print(Form("figure/resid_vsZ_fromFit_atR%d.pdf",(int)selectRs[ir]));
+
+      TFile* ofile_dphi = new TFile(Form("Rootfiles/hist_dphi_1Dz_R%d_fit.root",(int)selectRs[ir]),"recreate");
+      ofile_dphi->cd();
+      h_dphi_rphi_posz->Write();
+      h_dphi_rphi_negz->Write();
+      ofile_dphi->Close();
+
+      TFile* ofile_dz = new TFile(Form("Rootfiles/hist_dz_1Dz_R%d_fit.root",(int)selectRs[ir]),"recreate");
+      ofile_dz->cd();
+      h_dz_zr_posz->Write();
+      h_dz_zr_negz->Write();
+      ofile_dz->Close();
+
+      TFile* ofile_dr = new TFile(Form("Rootfiles/hist_dr_1Dz_R%d_fit.root",(int)selectRs[ir]),"recreate");
+      ofile_dr->cd();
+      h_dr_rphi_posz->Write();
+      h_dr_rphi_negz->Write();
+      h_dr_zr_posz->Write();
+      h_dr_zr_negz->Write();
+      ofile_dr->Close();
+
+      for (int j = 0; j < nZslides_posz; j++) {
+        if (gr_drphi_tanAlpha_posz[j]) {
+          delete gr_drphi_tanAlpha_posz[j];
+          gr_drphi_tanAlpha_posz[j] = nullptr;
+        }
+	if (gr_dz_tanBeta_posz[j]) {
+	  delete gr_dz_tanBeta_posz[j];
+	  gr_dz_tanBeta_posz[j] = nullptr;
+	}
+	if (fit_drphi_tanAlpha_posz[j]) {
+          delete fit_drphi_tanAlpha_posz[j];
+	  fit_drphi_tanAlpha_posz[j] = nullptr;
+	}
+	if (fit_dz_tanBeta_posz[j]) {
+          delete fit_dz_tanBeta_posz[j];
+	  fit_dz_tanBeta_posz[j] = nullptr;
+	}
+      }
+
+      for (int j = 0; j < nZslides_negz; j++) {
+        if (gr_drphi_tanAlpha_negz[j]) {
+          delete gr_drphi_tanAlpha_negz[j];
+          gr_drphi_tanAlpha_negz[j] = nullptr;
+        }
+	if (gr_dz_tanBeta_negz[j]) {
+	  delete gr_dz_tanBeta_negz[j];
+	  gr_dz_tanBeta_negz[j] = nullptr;
+	}
+	if (fit_drphi_tanAlpha_negz[j]) {
+          delete fit_drphi_tanAlpha_negz[j];
+	  fit_drphi_tanAlpha_negz[j] = nullptr;
+	}
+	if (fit_dz_tanBeta_negz[j]) {
+          delete fit_dz_tanBeta_negz[j];
+	  fit_dz_tanBeta_negz[j] = nullptr;
+	}
+      }
+
+      delete h_dr_rphi_posz;
+      delete h_dphi_rphi_posz;
+      delete h_dr_zr_posz;
+      delete h_dz_zr_posz;
+
+      delete h_dr_rphi_negz;
+      delete h_dphi_rphi_negz;
+      delete h_dr_zr_negz;
+      delete h_dz_zr_negz;
+
+    }
+  }
+}

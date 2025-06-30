@@ -5,9 +5,9 @@
  */
 
 #include "TpcSpaceChargeReconstruction.h"
-#include "TpcSpaceChargeMatrixContainerv1.h"
 #include "TpcSpaceChargeMatrixContainerv2.h"
-#include "TpcSpaceChargeMatrixContainerv3.h"
+#include "TpcSpaceChargeMatrixContainer1D.h"
+#include "TpcSpaceChargeMatrixContainer2D.h"
 #include "TpcSpaceChargeReconstructionHelper.h"
 
 #include <g4detectors/PHG4TpcCylinderGeom.h>
@@ -152,12 +152,12 @@ namespace
 TpcSpaceChargeReconstruction::TpcSpaceChargeReconstruction(const std::string& name)
   : SubsysReco(name)
   , PHParameterInterface(name)
-  , m_matrix_container(new TpcSpaceChargeMatrixContainerv1)
-  , m_matrix_container_1D_layer_negz(new TpcSpaceChargeMatrixContainerv2)
-  , m_matrix_container_1D_layer_posz(new TpcSpaceChargeMatrixContainerv2)
-  , m_matrix_container_1D_radius_negz(new TpcSpaceChargeMatrixContainerv2)
-  , m_matrix_container_1D_radius_posz(new TpcSpaceChargeMatrixContainerv2)
-  , m_matrix_container_2D_radius_z(new TpcSpaceChargeMatrixContainerv3)
+  , m_matrix_container(new TpcSpaceChargeMatrixContainerv2)
+  , m_matrix_container_1D_layer_negz(new TpcSpaceChargeMatrixContainer1D)
+  , m_matrix_container_1D_layer_posz(new TpcSpaceChargeMatrixContainer1D)
+  , m_matrix_container_1D_radius_negz(new TpcSpaceChargeMatrixContainer1D)
+  , m_matrix_container_1D_radius_posz(new TpcSpaceChargeMatrixContainer1D)
+  , m_matrix_container_2D_radius_z(new TpcSpaceChargeMatrixContainer2D)
 {
   InitializeParameters();
 }
@@ -572,8 +572,8 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
 
     // Calculate residuals
     // need to be calculated in local coordinates in the future
-    const double drphi = clusR * delta_phi(clusPhi - trackPhi);
-    if (std::isnan(drphi))
+    const double drp = clusR * delta_phi(clusPhi - trackPhi);
+    if (std::isnan(drp))
     {
       continue;
     }
@@ -587,13 +587,13 @@ bool TpcSpaceChargeReconstruction::checkTPOTResidual(SvtxTrack* track) const
     if (Verbosity() > 3)
     {
       std::cout << "TpcSpaceChargeReconstruction::checkTPOTResidual -"
-                << " drphi: " << drphi
+                << " drp: " << drp
                 << " dz: " << dz
                 << std::endl;
     }
 
     // check rphi residual for layer 55
-    if (layer==55 && std::fabs(drphi)>0.1)
+    if (layer==55 && std::fabs(drp)>0.1)
     {
       flag = false;
       break;
@@ -772,13 +772,13 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     const auto track_z_error = state->get_z_error();
 
     // residuals
-    const auto drphi = cluster_r * delta_phi(cluster_phi - track_phi);
+    const auto drp = cluster_r * delta_phi(cluster_phi - track_phi);
     const auto dz = cluster_z - track_z;
 
     // sanity checks
-    if (std::isnan(drphi))
+    if (std::isnan(drp))
     {
-      std::cout << "TpcSpaceChargeReconstruction::process_track - drphi is nan" << std::endl;
+      std::cout << "TpcSpaceChargeReconstruction::process_track - drp is nan" << std::endl;
       continue;
     }
 
@@ -830,14 +830,14 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         const auto iter = m_h_drphi.find(i);
         if (iter != m_h_drphi.end())
         {
-          iter->second->Fill(drphi);
+          iter->second->Fill(drp);
         }
       }
       {
         const auto iter = m_h_drphi_alpha.find(i);
         if (iter != m_h_drphi_alpha.end())
         {
-          iter->second->Fill(talpha, drphi);
+          iter->second->Fill(talpha, drp);
         }
       }
       {
@@ -867,7 +867,7 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     }
 
     // check against limits
-    if (std::abs(drphi) > m_max_drphi)
+    if (std::abs(drp) > m_max_drphi)
     {
       continue;
     }
@@ -919,9 +919,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 2, 1, tbeta / ez);
         m_matrix_container_1D_layer_negz->add_to_lhs(i_1D_layer, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 0, cluster_r*drphi / erp);
+        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 0, cluster_r*drp / erp);
         m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 1, dz / ez);
-        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 2, talpha * drphi / erp + tbeta * dz / ez);
+        m_matrix_container_1D_layer_negz->add_to_rhs(i_1D_layer, 2, talpha * drp / erp + tbeta * dz / ez);
 
         // update entries in cell
         m_matrix_container_1D_layer_negz->add_to_entries(i_1D_layer);
@@ -939,9 +939,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 2, 1, tbeta / ez);
         m_matrix_container_1D_radius_negz->add_to_lhs(i_1D_radius, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 0, cluster_r*drphi / erp);
+        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 0, cluster_r*drp / erp);
         m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 1, dz / ez);
-        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 2, talpha * drphi / erp + tbeta * dz / ez);
+        m_matrix_container_1D_radius_negz->add_to_rhs(i_1D_radius, 2, talpha * drp / erp + tbeta * dz / ez);
 
         // update entries in cell
         m_matrix_container_1D_radius_negz->add_to_entries(i_1D_radius);
@@ -960,9 +960,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 2, 1, tbeta / ez);
         m_matrix_container_1D_layer_posz->add_to_lhs(i_1D_layer, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 0, cluster_r*drphi / erp);
+        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 0, cluster_r*drp / erp);
         m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 1, dz / ez);
-        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 2, talpha * drphi / erp + tbeta * dz / ez);
+        m_matrix_container_1D_layer_posz->add_to_rhs(i_1D_layer, 2, talpha * drp / erp + tbeta * dz / ez);
 
         // update entries in cell
         m_matrix_container_1D_layer_posz->add_to_entries(i_1D_layer);
@@ -980,9 +980,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
         m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 2, 1, tbeta / ez);
         m_matrix_container_1D_radius_posz->add_to_lhs(i_1D_radius, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 0, cluster_r*drphi / erp);
+        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 0, cluster_r*drp / erp);
         m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 1, dz / ez);
-        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 2, talpha * drphi / erp + tbeta * dz / ez);
+        m_matrix_container_1D_radius_posz->add_to_rhs(i_1D_radius, 2, talpha * drp / erp + tbeta * dz / ez);
 
         // update entries in cell
         m_matrix_container_1D_radius_posz->add_to_entries(i_1D_radius);
@@ -1002,9 +1002,9 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 2, 1, tbeta / ez);
     m_matrix_container_2D_radius_z->add_to_lhs(i_2D_rz, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 0, cluster_r*drphi / erp);
+    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 0, cluster_r*drp / erp);
     m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 1, dz / ez);
-    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 2, talpha * drphi / erp + tbeta * dz / ez);
+    m_matrix_container_2D_radius_z->add_to_rhs(i_2D_rz, 2, talpha * drp / erp + tbeta * dz / ez);
 
     // update entries in cell
     m_matrix_container_2D_radius_z->add_to_entries(i_2D_rz);
@@ -1024,9 +1024,27 @@ void TpcSpaceChargeReconstruction::process_track(SvtxTrack* track)
     m_matrix_container->add_to_lhs(i, 2, 1, tbeta / ez);
     m_matrix_container->add_to_lhs(i, 2, 2, square(talpha) / erp + square(tbeta) / ez);
 
-    m_matrix_container->add_to_rhs(i, 0, cluster_r*drphi / erp);
+    m_matrix_container->add_to_rhs(i, 0, cluster_r*drp / erp);
     m_matrix_container->add_to_rhs(i, 1, dz / ez);
-    m_matrix_container->add_to_rhs(i, 2, talpha * drphi / erp + tbeta * dz / ez);
+    m_matrix_container->add_to_rhs(i, 2, talpha * drp / erp + tbeta * dz / ez);
+
+    // also update rphi reduced matrices
+    m_matrix_container->add_to_lhs_rphi(i, 0, 0, square(cluster_r) / erp);
+    m_matrix_container->add_to_lhs_rphi(i, 0, 1, cluster_r*talpha / erp);
+    m_matrix_container->add_to_lhs_rphi(i, 1, 0, cluster_r * talpha / erp);
+    m_matrix_container->add_to_lhs_rphi(i, 1, 1, square(talpha) / erp);
+
+    m_matrix_container->add_to_rhs_rphi(i, 0, cluster_r*drp / erp);
+    m_matrix_container->add_to_rhs_rphi(i, 1, talpha * drp / erp);
+
+    // also update z reduced matrices
+    m_matrix_container->add_to_lhs_z(i, 0, 0, 1. / ez);
+    m_matrix_container->add_to_lhs_z(i, 0, 1, tbeta / ez);
+    m_matrix_container->add_to_lhs_z(i, 1, 0, tbeta / ez);
+    m_matrix_container->add_to_lhs_z(i, 1, 1, square(tbeta) / ez);
+
+    m_matrix_container->add_to_rhs_z(i, 0, dz / ez);
+    m_matrix_container->add_to_rhs_z(i, 1, tbeta * dz / ez);
 
     // update entries in cell
     m_matrix_container->add_to_entries(i);

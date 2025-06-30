@@ -133,6 +133,7 @@ class DistortionAnalysis : public SubsysReco
   int m_segment = std::numeric_limits<int>::quiet_NaN();
   int m_runnumber = std::numeric_limits<int>::quiet_NaN();
   int m_ntpcclus = std::numeric_limits<int>::quiet_NaN();
+  float m_totalmbd = std::numeric_limits<float>::quiet_NaN();
   int m_runNumber = std::numeric_limits<int>::quiet_NaN();
   int m_eventNumber = std::numeric_limits<int>::quiet_NaN();
 
@@ -235,6 +236,8 @@ class DistortionAnalysis : public SubsysReco
   int m_row = std::numeric_limits<int>::quiet_NaN();
   int m_strip = std::numeric_limits<int>::quiet_NaN();
   float m_zdriftlength = std::numeric_limits<float>::quiet_NaN();
+  
+  float m_mbdvtxz = std::numeric_limits<float>::quiet_NaN();
 
   int m_ntracks = std::numeric_limits<int>::quiet_NaN();
   int m_nvertices = std::numeric_limits<int>::quiet_NaN();

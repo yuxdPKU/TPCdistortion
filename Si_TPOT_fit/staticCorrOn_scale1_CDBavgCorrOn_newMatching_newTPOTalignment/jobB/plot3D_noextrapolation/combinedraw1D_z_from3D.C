@@ -5,23 +5,6 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libphool.so)
 
-void plot1D_Ybin(TH3* h3, TH1* h1, float y)
-{
-//  TpcSpaceChargeReconstructionHelper::set_phi_range_central( {-1.73246,-1.43608} );
-//  TpcSpaceChargeReconstructionHelper::set_phi_range_east( {-2.26272,-1.96089} );
-//  TpcSpaceChargeReconstructionHelper::set_phi_range_west( {-1.21241,-0.909953} );
-
-  int xbin = h3->GetXaxis()->FindBin(((-1.73246)+(-1.43608))/2.+2*TMath::Pi());//central
-  //int xbin = h3->GetXaxis()->FindBin(((-2.26272)+(-1.96089))/2.+2*TMath::Pi());//east
-  //int xbin = h3->GetXaxis()->FindBin(((-1.21241)+(-0.909953))/2.+2*TMath::Pi());//west
-  int ybin = h3->GetYaxis()->FindBin(y);
-  for (int i = 1; i <= h3->GetNbinsZ(); i++)
-  {
-      h1->SetBinContent(i, h3->GetBinContent(xbin, ybin, i));
-      h1->SetBinError(i, h3->GetBinError(xbin, ybin, i));
-  }
-}
-
 std::pair<double,double> SetCommonYRange(const std::vector<TH1*>& histograms)
 {
     Double_t yMin = TMath::Infinity();
@@ -53,7 +36,8 @@ TGaxis::SetMaxDigits(3);
 std::pair<double, double> phirange_NCO = {0.609928,0.917104};
 std::pair<double, double> phirange_NCI = {0.0276558,0.566484};
 std::pair<double, double> phirange_SCI = {-0.568656,-0.0325273};
-std::pair<double, double> phirange_SCO = {-0.788212,-0.613404};
+//std::pair<double, double> phirange_SCO = {-0.788212,-0.613404};
+std::pair<double, double> phirange_SCO = {-0.92,-0.613404};
 
 std::vector<float> selectRs={75, 70, 65, 60, 55, 50, 45, 40, 35, 30};
 for (const auto& selectR : selectRs)
@@ -66,12 +50,18 @@ int runs[nrun] = {53877};
 TH1 *h_R_central_pos[nrun], *h_P_central_pos[nrun], *h_Z_central_pos[nrun], *h_RP_central_pos[nrun];
 TH1 *h_R_west_pos[nrun], *h_P_west_pos[nrun], *h_Z_west_pos[nrun], *h_RP_west_pos[nrun];
 TH1 *h_R_east_pos[nrun], *h_P_east_pos[nrun], *h_Z_east_pos[nrun], *h_RP_east_pos[nrun];
+TH1 *hfit_R_rphi_central_pos[nrun], *hfit_R_zr_central_pos[nrun], *hfit_P_central_pos[nrun], *hfit_Z_central_pos[nrun];
+TH1 *hfit_R_rphi_west_pos[nrun], *hfit_R_zr_west_pos[nrun], *hfit_P_west_pos[nrun], *hfit_Z_west_pos[nrun];
+TH1 *hfit_R_rphi_east_pos[nrun], *hfit_R_zr_east_pos[nrun], *hfit_P_east_pos[nrun], *hfit_Z_east_pos[nrun];
 TLine *l_nco_o_R[nrun], *l_nco_i_R[nrun], *l_nci_o_R[nrun], *l_nci_i_R[nrun];
 TLine *l_nco_o_P[nrun], *l_nco_i_P[nrun], *l_nci_o_P[nrun], *l_nci_i_P[nrun];
 TLine *l_nco_o_Z[nrun], *l_nco_i_Z[nrun], *l_nci_o_Z[nrun], *l_nci_i_Z[nrun];
 TH1 *h_R_central_neg[nrun], *h_P_central_neg[nrun], *h_Z_central_neg[nrun], *h_RP_central_neg[nrun];
 TH1 *h_R_west_neg[nrun], *h_P_west_neg[nrun], *h_Z_west_neg[nrun], *h_RP_west_neg[nrun];
 TH1 *h_R_east_neg[nrun], *h_P_east_neg[nrun], *h_Z_east_neg[nrun], *h_RP_east_neg[nrun];
+TH1 *hfit_R_rphi_central_neg[nrun], *hfit_R_zr_central_neg[nrun], *hfit_P_central_neg[nrun], *hfit_Z_central_neg[nrun];
+TH1 *hfit_R_rphi_west_neg[nrun], *hfit_R_zr_west_neg[nrun], *hfit_P_west_neg[nrun], *hfit_Z_west_neg[nrun];
+TH1 *hfit_R_rphi_east_neg[nrun], *hfit_R_zr_east_neg[nrun], *hfit_P_east_neg[nrun], *hfit_Z_east_neg[nrun];
 TLine *l_sci_i_R[nrun], *l_sci_o_R[nrun], *l_sco_i_R[nrun], *l_sco_o_R[nrun];
 TLine *l_sci_i_P[nrun], *l_sci_o_P[nrun], *l_sco_i_P[nrun], *l_sco_o_P[nrun];
 TLine *l_sci_i_Z[nrun], *l_sci_o_Z[nrun], *l_sco_i_Z[nrun], *l_sco_o_Z[nrun];
@@ -128,26 +118,101 @@ for (int i = 0; i < nrun; i++)
   h_Z_east_pos[i] = (TH1*) infile_dz_east->Get(Form("hIntDistortionZ_posz_%d",runs[i]));
   h_Z_east_neg[i] = (TH1*) infile_dz_east->Get(Form("hIntDistortionZ_negz_%d",runs[i]));
 
-  h_R_central_pos[i]->SetLineColor(i+2); h_R_central_pos[i]->SetLineWidth(1); h_R_central_pos[i]->SetFillColor(0); h_R_central_pos[i]->SetMarkerColor(i+2);
-  h_P_central_pos[i]->SetLineColor(i+2); h_P_central_pos[i]->SetLineWidth(1); h_P_central_pos[i]->SetFillColor(0); h_P_central_pos[i]->SetMarkerColor(i+2);
-  h_Z_central_pos[i]->SetLineColor(i+2); h_Z_central_pos[i]->SetLineWidth(1); h_Z_central_pos[i]->SetFillColor(0); h_Z_central_pos[i]->SetMarkerColor(i+2);
-  h_R_central_neg[i]->SetLineColor(i+2); h_R_central_neg[i]->SetLineWidth(1); h_R_central_neg[i]->SetFillColor(0); h_R_central_neg[i]->SetMarkerColor(i+2);
-  h_P_central_neg[i]->SetLineColor(i+2); h_P_central_neg[i]->SetLineWidth(1); h_P_central_neg[i]->SetFillColor(0); h_P_central_neg[i]->SetMarkerColor(i+2);
-  h_Z_central_neg[i]->SetLineColor(i+2); h_Z_central_neg[i]->SetLineWidth(1); h_Z_central_neg[i]->SetFillColor(0); h_Z_central_neg[i]->SetMarkerColor(i+2);
+  TFile* infile_fit_dr_central = new TFile(Form("central/Rootfiles/hist_dr_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dr_central->cd();
+  hfit_R_rphi_central_pos[i] = (TH1*) infile_fit_dr_central->Get(Form("h_dr_rphi_posz"));
+  hfit_R_rphi_central_neg[i] = (TH1*) infile_fit_dr_central->Get(Form("h_dr_rphi_negz"));
+  hfit_R_zr_central_pos[i] = (TH1*) infile_fit_dr_central->Get(Form("h_dr_zr_posz"));
+  hfit_R_zr_central_neg[i] = (TH1*) infile_fit_dr_central->Get(Form("h_dr_zr_negz"));
 
-  h_R_west_pos[i]->SetLineColor(i+3); h_R_west_pos[i]->SetLineWidth(1); h_R_west_pos[i]->SetFillColor(0); h_R_west_pos[i]->SetMarkerColor(i+3);
-  h_P_west_pos[i]->SetLineColor(i+3); h_P_west_pos[i]->SetLineWidth(1); h_P_west_pos[i]->SetFillColor(0); h_P_west_pos[i]->SetMarkerColor(i+3);
-  h_Z_west_pos[i]->SetLineColor(i+3); h_Z_west_pos[i]->SetLineWidth(1); h_Z_west_pos[i]->SetFillColor(0); h_Z_west_pos[i]->SetMarkerColor(i+3);
-  h_R_west_neg[i]->SetLineColor(i+3); h_R_west_neg[i]->SetLineWidth(1); h_R_west_neg[i]->SetFillColor(0); h_R_west_neg[i]->SetMarkerColor(i+3);
-  h_P_west_neg[i]->SetLineColor(i+3); h_P_west_neg[i]->SetLineWidth(1); h_P_west_neg[i]->SetFillColor(0); h_P_west_neg[i]->SetMarkerColor(i+3);
-  h_Z_west_neg[i]->SetLineColor(i+3); h_Z_west_neg[i]->SetLineWidth(1); h_Z_west_neg[i]->SetFillColor(0); h_Z_west_neg[i]->SetMarkerColor(i+3);
+  TFile* infile_fit_dphi_central = new TFile(Form("central/Rootfiles/hist_dphi_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dphi_central->cd();
+  hfit_P_central_pos[i] = (TH1*) infile_fit_dphi_central->Get(Form("h_dphi_rphi_posz"));
+  hfit_P_central_neg[i] = (TH1*) infile_fit_dphi_central->Get(Form("h_dphi_rphi_negz"));
+ 
+  TFile* infile_fit_dz_central = new TFile(Form("central/Rootfiles/hist_dz_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dz_central->cd();
+  hfit_Z_central_pos[i] = (TH1*) infile_fit_dz_central->Get(Form("h_dz_zr_posz"));
+  hfit_Z_central_neg[i] = (TH1*) infile_fit_dz_central->Get(Form("h_dz_zr_negz"));
 
-  h_R_east_pos[i]->SetLineColor(i+4); h_R_east_pos[i]->SetLineWidth(1); h_R_east_pos[i]->SetFillColor(0); h_R_east_pos[i]->SetMarkerColor(i+4);
-  h_P_east_pos[i]->SetLineColor(i+4); h_P_east_pos[i]->SetLineWidth(1); h_P_east_pos[i]->SetFillColor(0); h_P_east_pos[i]->SetMarkerColor(i+4);
-  h_Z_east_pos[i]->SetLineColor(i+4); h_Z_east_pos[i]->SetLineWidth(1); h_Z_east_pos[i]->SetFillColor(0); h_Z_east_pos[i]->SetMarkerColor(i+4);
-  h_R_east_neg[i]->SetLineColor(i+4); h_R_east_neg[i]->SetLineWidth(1); h_R_east_neg[i]->SetFillColor(0); h_R_east_neg[i]->SetMarkerColor(i+4);
-  h_P_east_neg[i]->SetLineColor(i+4); h_P_east_neg[i]->SetLineWidth(1); h_P_east_neg[i]->SetFillColor(0); h_P_east_neg[i]->SetMarkerColor(i+4);
-  h_Z_east_neg[i]->SetLineColor(i+4); h_Z_east_neg[i]->SetLineWidth(1); h_Z_east_neg[i]->SetFillColor(0); h_Z_east_neg[i]->SetMarkerColor(i+4);
+  TFile* infile_fit_dr_west = new TFile(Form("west/Rootfiles/hist_dr_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dr_west->cd();
+  hfit_R_rphi_west_pos[i] = (TH1*) infile_fit_dr_west->Get(Form("h_dr_rphi_posz"));
+  hfit_R_rphi_west_neg[i] = (TH1*) infile_fit_dr_west->Get(Form("h_dr_rphi_negz"));
+  hfit_R_zr_west_pos[i] = (TH1*) infile_fit_dr_west->Get(Form("h_dr_zr_posz"));
+  hfit_R_zr_west_neg[i] = (TH1*) infile_fit_dr_west->Get(Form("h_dr_zr_negz"));
+
+  TFile* infile_fit_dphi_west = new TFile(Form("west/Rootfiles/hist_dphi_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dphi_west->cd();
+  hfit_P_west_pos[i] = (TH1*) infile_fit_dphi_west->Get(Form("h_dphi_rphi_posz"));
+  hfit_P_west_neg[i] = (TH1*) infile_fit_dphi_west->Get(Form("h_dphi_rphi_negz"));
+ 
+  TFile* infile_fit_dz_west = new TFile(Form("west/Rootfiles/hist_dz_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dz_west->cd();
+  hfit_Z_west_pos[i] = (TH1*) infile_fit_dz_west->Get(Form("h_dz_zr_posz"));
+  hfit_Z_west_neg[i] = (TH1*) infile_fit_dz_west->Get(Form("h_dz_zr_negz"));
+
+  TFile* infile_fit_dr_east = new TFile(Form("east/Rootfiles/hist_dr_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dr_east->cd();
+  hfit_R_rphi_east_pos[i] = (TH1*) infile_fit_dr_east->Get(Form("h_dr_rphi_posz"));
+  hfit_R_rphi_east_neg[i] = (TH1*) infile_fit_dr_east->Get(Form("h_dr_rphi_negz"));
+  hfit_R_zr_east_pos[i] = (TH1*) infile_fit_dr_east->Get(Form("h_dr_zr_posz"));
+  hfit_R_zr_east_neg[i] = (TH1*) infile_fit_dr_east->Get(Form("h_dr_zr_negz"));
+
+  TFile* infile_fit_dphi_east = new TFile(Form("east/Rootfiles/hist_dphi_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dphi_east->cd();
+  hfit_P_east_pos[i] = (TH1*) infile_fit_dphi_east->Get(Form("h_dphi_rphi_posz"));
+  hfit_P_east_neg[i] = (TH1*) infile_fit_dphi_east->Get(Form("h_dphi_rphi_negz"));
+ 
+  TFile* infile_fit_dz_east = new TFile(Form("east/Rootfiles/hist_dz_1Dz_R%d_fit.root",(int)selectR),"");
+  infile_fit_dz_east->cd();
+  hfit_Z_east_pos[i] = (TH1*) infile_fit_dz_east->Get(Form("h_dz_zr_posz"));
+  hfit_Z_east_neg[i] = (TH1*) infile_fit_dz_east->Get(Form("h_dz_zr_negz"));
+
+  h_R_central_pos[i]->SetLineColor(kRed); h_R_central_pos[i]->SetLineWidth(1); h_R_central_pos[i]->SetFillColor(0); h_R_central_pos[i]->SetMarkerColor(kRed);
+  h_P_central_pos[i]->SetLineColor(kRed); h_P_central_pos[i]->SetLineWidth(1); h_P_central_pos[i]->SetFillColor(0); h_P_central_pos[i]->SetMarkerColor(kRed);
+  h_Z_central_pos[i]->SetLineColor(kRed); h_Z_central_pos[i]->SetLineWidth(1); h_Z_central_pos[i]->SetFillColor(0); h_Z_central_pos[i]->SetMarkerColor(kRed);
+  h_R_central_neg[i]->SetLineColor(kRed); h_R_central_neg[i]->SetLineWidth(1); h_R_central_neg[i]->SetFillColor(0); h_R_central_neg[i]->SetMarkerColor(kRed);
+  h_P_central_neg[i]->SetLineColor(kRed); h_P_central_neg[i]->SetLineWidth(1); h_P_central_neg[i]->SetFillColor(0); h_P_central_neg[i]->SetMarkerColor(kRed);
+  h_Z_central_neg[i]->SetLineColor(kRed); h_Z_central_neg[i]->SetLineWidth(1); h_Z_central_neg[i]->SetFillColor(0); h_Z_central_neg[i]->SetMarkerColor(kRed);
+  hfit_R_rphi_central_pos[i]->SetLineColor(kOrange); hfit_R_rphi_central_pos[i]->SetLineWidth(1); hfit_R_rphi_central_pos[i]->SetFillColor(0); hfit_R_rphi_central_pos[i]->SetMarkerColor(kOrange);
+  hfit_R_zr_central_pos[i]->SetLineColor(kMagenta); hfit_R_zr_central_pos[i]->SetLineWidth(1); hfit_R_zr_central_pos[i]->SetFillColor(0); hfit_R_zr_central_pos[i]->SetMarkerColor(kMagenta);
+  hfit_P_central_pos[i]->SetLineColor(kOrange); hfit_P_central_pos[i]->SetLineWidth(1); hfit_P_central_pos[i]->SetFillColor(0); hfit_P_central_pos[i]->SetMarkerColor(kOrange);
+  hfit_Z_central_pos[i]->SetLineColor(kMagenta); hfit_Z_central_pos[i]->SetLineWidth(1); hfit_Z_central_pos[i]->SetFillColor(0); hfit_Z_central_pos[i]->SetMarkerColor(kMagenta);
+  hfit_R_rphi_central_neg[i]->SetLineColor(kOrange); hfit_R_rphi_central_neg[i]->SetLineWidth(1); hfit_R_rphi_central_neg[i]->SetFillColor(0); hfit_R_rphi_central_neg[i]->SetMarkerColor(kOrange);
+  hfit_R_zr_central_neg[i]->SetLineColor(kMagenta); hfit_R_zr_central_neg[i]->SetLineWidth(1); hfit_R_zr_central_neg[i]->SetFillColor(0); hfit_R_zr_central_neg[i]->SetMarkerColor(kMagenta);
+  hfit_P_central_neg[i]->SetLineColor(kOrange); hfit_P_central_neg[i]->SetLineWidth(1); hfit_P_central_neg[i]->SetFillColor(0); hfit_P_central_neg[i]->SetMarkerColor(kOrange);
+  hfit_Z_central_neg[i]->SetLineColor(kMagenta); hfit_Z_central_neg[i]->SetLineWidth(1); hfit_Z_central_neg[i]->SetFillColor(0); hfit_Z_central_neg[i]->SetMarkerColor(kMagenta);
+
+  h_R_west_pos[i]->SetLineColor(kGreen); h_R_west_pos[i]->SetLineWidth(1); h_R_west_pos[i]->SetFillColor(0); h_R_west_pos[i]->SetMarkerColor(kGreen);
+  h_P_west_pos[i]->SetLineColor(kGreen); h_P_west_pos[i]->SetLineWidth(1); h_P_west_pos[i]->SetFillColor(0); h_P_west_pos[i]->SetMarkerColor(kGreen);
+  h_Z_west_pos[i]->SetLineColor(kGreen); h_Z_west_pos[i]->SetLineWidth(1); h_Z_west_pos[i]->SetFillColor(0); h_Z_west_pos[i]->SetMarkerColor(kGreen);
+  h_R_west_neg[i]->SetLineColor(kGreen); h_R_west_neg[i]->SetLineWidth(1); h_R_west_neg[i]->SetFillColor(0); h_R_west_neg[i]->SetMarkerColor(kGreen);
+  h_P_west_neg[i]->SetLineColor(kGreen); h_P_west_neg[i]->SetLineWidth(1); h_P_west_neg[i]->SetFillColor(0); h_P_west_neg[i]->SetMarkerColor(kGreen);
+  h_Z_west_neg[i]->SetLineColor(kGreen); h_Z_west_neg[i]->SetLineWidth(1); h_Z_west_neg[i]->SetFillColor(0); h_Z_west_neg[i]->SetMarkerColor(kGreen);
+  hfit_R_rphi_west_pos[i]->SetLineColor(kGreen+4); hfit_R_rphi_west_pos[i]->SetLineWidth(1); hfit_R_rphi_west_pos[i]->SetFillColor(0); hfit_R_rphi_west_pos[i]->SetMarkerColor(kGreen+4);
+  hfit_R_zr_west_pos[i]->SetLineColor(kYellow); hfit_R_zr_west_pos[i]->SetLineWidth(1); hfit_R_zr_west_pos[i]->SetFillColor(0); hfit_R_zr_west_pos[i]->SetMarkerColor(kYellow);
+  hfit_P_west_pos[i]->SetLineColor(kGreen+4); hfit_P_west_pos[i]->SetLineWidth(1); hfit_P_west_pos[i]->SetFillColor(0); hfit_P_west_pos[i]->SetMarkerColor(kGreen+4);
+  hfit_Z_west_pos[i]->SetLineColor(kYellow); hfit_Z_west_pos[i]->SetLineWidth(1); hfit_Z_west_pos[i]->SetFillColor(0); hfit_Z_west_pos[i]->SetMarkerColor(kYellow);
+  hfit_R_rphi_west_neg[i]->SetLineColor(kGreen+4); hfit_R_rphi_west_neg[i]->SetLineWidth(1); hfit_R_rphi_west_neg[i]->SetFillColor(0); hfit_R_rphi_west_neg[i]->SetMarkerColor(kGreen+4);
+  hfit_R_zr_west_neg[i]->SetLineColor(kYellow); hfit_R_zr_west_neg[i]->SetLineWidth(1); hfit_R_zr_west_neg[i]->SetFillColor(0); hfit_R_zr_west_neg[i]->SetMarkerColor(kYellow);
+  hfit_P_west_neg[i]->SetLineColor(kGreen+4); hfit_P_west_neg[i]->SetLineWidth(1); hfit_P_west_neg[i]->SetFillColor(0); hfit_P_west_neg[i]->SetMarkerColor(kGreen+4);
+  hfit_Z_west_neg[i]->SetLineColor(kYellow); hfit_Z_west_neg[i]->SetLineWidth(1); hfit_Z_west_neg[i]->SetFillColor(0); hfit_Z_west_neg[i]->SetMarkerColor(kYellow);
+
+  h_R_east_pos[i]->SetLineColor(kBlue); h_R_east_pos[i]->SetLineWidth(1); h_R_east_pos[i]->SetFillColor(0); h_R_east_pos[i]->SetMarkerColor(kBlue);
+  h_P_east_pos[i]->SetLineColor(kBlue); h_P_east_pos[i]->SetLineWidth(1); h_P_east_pos[i]->SetFillColor(0); h_P_east_pos[i]->SetMarkerColor(kBlue);
+  h_Z_east_pos[i]->SetLineColor(kBlue); h_Z_east_pos[i]->SetLineWidth(1); h_Z_east_pos[i]->SetFillColor(0); h_Z_east_pos[i]->SetMarkerColor(kBlue);
+  h_R_east_neg[i]->SetLineColor(kBlue); h_R_east_neg[i]->SetLineWidth(1); h_R_east_neg[i]->SetFillColor(0); h_R_east_neg[i]->SetMarkerColor(kBlue);
+  h_P_east_neg[i]->SetLineColor(kBlue); h_P_east_neg[i]->SetLineWidth(1); h_P_east_neg[i]->SetFillColor(0); h_P_east_neg[i]->SetMarkerColor(kBlue);
+  h_Z_east_neg[i]->SetLineColor(kBlue); h_Z_east_neg[i]->SetLineWidth(1); h_Z_east_neg[i]->SetFillColor(0); h_Z_east_neg[i]->SetMarkerColor(kBlue);
+  hfit_R_rphi_east_pos[i]->SetLineColor(kViolet+2); hfit_R_rphi_east_pos[i]->SetLineWidth(1); hfit_R_rphi_east_pos[i]->SetFillColor(0); hfit_R_rphi_east_pos[i]->SetMarkerColor(kViolet+2);
+  hfit_R_zr_east_pos[i]->SetLineColor(kCyan); hfit_R_zr_east_pos[i]->SetLineWidth(1); hfit_R_zr_east_pos[i]->SetFillColor(0); hfit_R_zr_east_pos[i]->SetMarkerColor(kCyan);
+  hfit_P_east_pos[i]->SetLineColor(kViolet+2); hfit_P_east_pos[i]->SetLineWidth(1); hfit_P_east_pos[i]->SetFillColor(0); hfit_P_east_pos[i]->SetMarkerColor(kViolet+2);
+  hfit_Z_east_pos[i]->SetLineColor(kCyan); hfit_Z_east_pos[i]->SetLineWidth(1); hfit_Z_east_pos[i]->SetFillColor(0); hfit_Z_east_pos[i]->SetMarkerColor(kCyan);
+  hfit_R_rphi_east_neg[i]->SetLineColor(kViolet+2); hfit_R_rphi_east_neg[i]->SetLineWidth(1); hfit_R_rphi_east_neg[i]->SetFillColor(0); hfit_R_rphi_east_neg[i]->SetMarkerColor(kViolet+2);
+  hfit_R_zr_east_neg[i]->SetLineColor(kCyan); hfit_R_zr_east_neg[i]->SetLineWidth(1); hfit_R_zr_east_neg[i]->SetFillColor(0); hfit_R_zr_east_neg[i]->SetMarkerColor(kCyan);
+  hfit_P_east_neg[i]->SetLineColor(kViolet+2); hfit_P_east_neg[i]->SetLineWidth(1); hfit_P_east_neg[i]->SetFillColor(0); hfit_P_east_neg[i]->SetMarkerColor(kViolet+2);
+  hfit_Z_east_neg[i]->SetLineColor(kCyan); hfit_Z_east_neg[i]->SetLineWidth(1); hfit_Z_east_neg[i]->SetFillColor(0); hfit_Z_east_neg[i]->SetMarkerColor(kCyan);
 
   std::pair<double,double> yrange_R = SetCommonYRange({h_R_central_pos[i],h_R_west_pos[i],h_R_east_pos[i],h_R_central_neg[i],h_R_west_neg[i],h_R_east_neg[i]});
   std::pair<double,double> yrange_P = SetCommonYRange({h_P_central_pos[i],h_P_west_pos[i],h_P_east_pos[i],h_P_central_neg[i],h_P_west_neg[i],h_P_east_neg[i]});
@@ -186,7 +251,7 @@ for (int i = 0; i < nrun; i++)
   l_sco_o_Z[i] = new TLine(selectR*tan(phirange_SCO.first),yrange_Z.first,selectR*tan(phirange_SCO.first),yrange_Z.second);
 }
 
-TCanvas* can = new TCanvas("can","",3200,1200);
+TCanvas* can = new TCanvas("can","",6400,2400);
 can->Divide(4,2);
 can->cd(1);
 for (int i=0; i<nrun; i++)
@@ -194,6 +259,9 @@ for (int i=0; i<nrun; i++)
   h_P_central_pos[i]->Draw("hist,e,same");
   h_P_west_pos[i]->Draw("hist,e,same");
   h_P_east_pos[i]->Draw("hist,e,same");
+  hfit_P_central_pos[i]->Draw("hist,e,same");
+  hfit_P_west_pos[i]->Draw("hist,e,same");
+  hfit_P_east_pos[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {
@@ -208,6 +276,12 @@ for (int i=0; i<nrun; i++)
   h_R_central_pos[i]->Draw("hist,e,same");
   h_R_west_pos[i]->Draw("hist,e,same");
   h_R_east_pos[i]->Draw("hist,e,same");
+  hfit_R_rphi_central_pos[i]->Draw("hist,e,same");
+  hfit_R_rphi_west_pos[i]->Draw("hist,e,same");
+  hfit_R_rphi_east_pos[i]->Draw("hist,e,same");
+  hfit_R_zr_central_pos[i]->Draw("hist,e,same");
+  hfit_R_zr_west_pos[i]->Draw("hist,e,same");
+  hfit_R_zr_east_pos[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {
@@ -222,6 +296,9 @@ for (int i=0; i<nrun; i++)
   h_Z_central_pos[i]->Draw("hist,e,same");
   h_Z_west_pos[i]->Draw("hist,e,same");
   h_Z_east_pos[i]->Draw("hist,e,same");
+  hfit_Z_central_pos[i]->Draw("hist,e,same");
+  hfit_Z_west_pos[i]->Draw("hist,e,same");
+  hfit_Z_east_pos[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {
@@ -235,9 +312,15 @@ TLegend *legend = new TLegend(0.0, 0.0, 0.9, 0.9);
 for (int i=0; i<nrun; i++)
 {
   legend->SetHeader(Form("Run %d, R = %d cm",runs[i],(int)selectR));
-  legend->AddEntry(h_P_central_pos[i], Form("Central tiles"), "l");
-  legend->AddEntry(h_P_west_pos[i], Form("West tiles"), "l");
-  legend->AddEntry(h_P_east_pos[i], Form("East tiles"), "l");
+  legend->AddEntry(h_R_central_pos[i], Form("Central tiles, matrix"), "l");
+  legend->AddEntry(h_R_west_pos[i], Form("West tiles, matrix"), "l");
+  legend->AddEntry(h_R_east_pos[i], Form("East tiles, matrix"), "l");
+  legend->AddEntry(hfit_R_rphi_central_pos[i], Form("Central tiles, fit R-#phi"), "l");
+  legend->AddEntry(hfit_R_rphi_west_pos[i], Form("West tiles, fit R-#phi"), "l");
+  legend->AddEntry(hfit_R_rphi_east_pos[i], Form("East tiles, fit R-#phi"), "l");
+  legend->AddEntry(hfit_R_zr_central_pos[i], Form("Central tiles, fit Z-R"), "l");
+  legend->AddEntry(hfit_R_zr_west_pos[i], Form("West tiles, fit Z-R"), "l");
+  legend->AddEntry(hfit_R_zr_east_pos[i], Form("East tiles, fit Z-R"), "l");
 }
 legend->SetTextSize(0.1);
 legend->Draw();
@@ -247,6 +330,9 @@ for (int i=0; i<nrun; i++)
   h_P_central_neg[i]->Draw("hist,e,same");
   h_P_west_neg[i]->Draw("hist,e,same");
   h_P_east_neg[i]->Draw("hist,e,same");
+  hfit_P_central_neg[i]->Draw("hist,e,same");
+  hfit_P_west_neg[i]->Draw("hist,e,same");
+  hfit_P_east_neg[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {
@@ -261,6 +347,12 @@ for (int i=0; i<nrun; i++)
   h_R_central_neg[i]->Draw("hist,e,same");
   h_R_west_neg[i]->Draw("hist,e,same");
   h_R_east_neg[i]->Draw("hist,e,same");
+  hfit_R_rphi_central_neg[i]->Draw("hist,e,same");
+  hfit_R_rphi_west_neg[i]->Draw("hist,e,same");
+  hfit_R_rphi_east_neg[i]->Draw("hist,e,same");
+  hfit_R_zr_central_neg[i]->Draw("hist,e,same");
+  hfit_R_zr_west_neg[i]->Draw("hist,e,same");
+  hfit_R_zr_east_neg[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {
@@ -275,6 +367,9 @@ for (int i=0; i<nrun; i++)
   h_Z_central_neg[i]->Draw("hist,e,same");
   h_Z_west_neg[i]->Draw("hist,e,same");
   h_Z_east_neg[i]->Draw("hist,e,same");
+  hfit_Z_central_neg[i]->Draw("hist,e,same");
+  hfit_Z_west_neg[i]->Draw("hist,e,same");
+  hfit_Z_east_neg[i]->Draw("hist,e,same");
 }
 for (int i=0; i<nrun; i++)
 {

@@ -5,7 +5,7 @@
  */
 
 #include "TpcSpaceChargeMatrixInversion1D.h"
-#include "TpcSpaceChargeMatrixContainerv2.h"
+#include "TpcSpaceChargeMatrixContainer1D.h"
 #include "TpcSpaceChargeReconstructionHelper.h"
 
 #include <frog/FROG.h>
@@ -84,7 +84,7 @@ bool TpcSpaceChargeMatrixInversion1D::add(const TpcSpaceChargeMatrixContainer& s
   // check internal container, create if necessary
   if (!m_matrix_container_layer_negz)
   {
-    m_matrix_container_layer_negz.reset(new TpcSpaceChargeMatrixContainerv2);
+    m_matrix_container_layer_negz.reset(new TpcSpaceChargeMatrixContainer1D);
 
     // get grid dimensions from source
     int layerbins = 0;
@@ -100,7 +100,7 @@ bool TpcSpaceChargeMatrixInversion1D::add(const TpcSpaceChargeMatrixContainer& s
 
   if (!m_matrix_container_layer_posz)
   {
-    m_matrix_container_layer_posz.reset(new TpcSpaceChargeMatrixContainerv2);
+    m_matrix_container_layer_posz.reset(new TpcSpaceChargeMatrixContainer1D);
 
     // get grid dimensions from source
     int layerbins = 0;
@@ -116,7 +116,7 @@ bool TpcSpaceChargeMatrixInversion1D::add(const TpcSpaceChargeMatrixContainer& s
 
   if (!m_matrix_container_radius_negz)
   {
-    m_matrix_container_radius_negz.reset(new TpcSpaceChargeMatrixContainerv2);
+    m_matrix_container_radius_negz.reset(new TpcSpaceChargeMatrixContainer1D);
 
     // get grid dimensions from source
     int radiusbins = 0;
@@ -132,7 +132,7 @@ bool TpcSpaceChargeMatrixInversion1D::add(const TpcSpaceChargeMatrixContainer& s
 
   if (!m_matrix_container_radius_posz)
   {
-    m_matrix_container_radius_posz.reset(new TpcSpaceChargeMatrixContainerv2);
+    m_matrix_container_radius_posz.reset(new TpcSpaceChargeMatrixContainer1D);
 
     // get grid dimensions from source
     int radiusbins = 0;

@@ -39,7 +39,7 @@
 #include <trackingdiagnostics/TrkrNtuplizer.h>
 
 //#include <distortionanalysis/DistortionAnalysis.h>
-#include <distortionanalysis/PHTrackPruner.h>
+#include <trackreco/PHTrackPruner.h>
 
 #include <stdio.h>
 

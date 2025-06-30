@@ -5,7 +5,7 @@
  */
 
 #include "TpcSpaceChargeMatrixInversion2D.h"
-#include "TpcSpaceChargeMatrixContainerv3.h"
+#include "TpcSpaceChargeMatrixContainer2D.h"
 #include "TpcSpaceChargeReconstructionHelper.h"
 
 #include <frog/FROG.h>
@@ -146,7 +146,7 @@ bool TpcSpaceChargeMatrixInversion2D::add(const TpcSpaceChargeMatrixContainer& s
   // check internal container, create if necessary
   if (!m_matrix_container)
   {
-    m_matrix_container.reset(new TpcSpaceChargeMatrixContainerv3);
+    m_matrix_container.reset(new TpcSpaceChargeMatrixContainer2D);
 
     // get grid dimensions from source
     int pbins = 0;

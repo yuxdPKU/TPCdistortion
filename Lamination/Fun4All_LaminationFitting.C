@@ -120,7 +120,7 @@ void Fun4All_LaminationFitting(
 
   TString laminationqafile = theOutfile + "_qa.pdf";
   std::string laminationqastring(laminationqafile.Data());
-  G4TPC::LaminationFitName = laminationqastring;
+  G4TPC::LaminationQAName = laminationqastring;
 
   G4MAGNET::magfield_rescale = 1;
   TrackingInit();

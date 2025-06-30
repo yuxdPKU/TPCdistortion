@@ -1,11 +1,11 @@
-#ifndef TPCCALIB_TPCSPACECHARGEMATRIXCONTAINERV3_H
-#define TPCCALIB_TPCSPACECHARGEMATRIXCONTAINERV3_H
+#ifndef TPCCALIB_TPCSPACECHARGEMATRIXCONTAINERV2_H
+#define TPCCALIB_TPCSPACECHARGEMATRIXCONTAINERV2_H
 
 /**
  * @file tpccalib/TpcSpaceChargeMatrixContainer.h
  * @author Xudong Yu
- * @date Februray 2025
- * @brief Contains matrices needed for space charge trackbase reconstruction 2D
+ * @date January 2025
+ * @brief Contains matrices needed for space charge trackbase reconstruction 1D (layer,radius,phi,z)
  */
 
 #include "TpcSpaceChargeMatrixContainer.h"
@@ -15,14 +15,14 @@
 /**
  * @brief Cluster container object
  */
-class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
+class TpcSpaceChargeMatrixContainer1D : public TpcSpaceChargeMatrixContainer
 {
  public:
   /// constructor
-  TpcSpaceChargeMatrixContainerv3();
+  TpcSpaceChargeMatrixContainer1D();
 
   /// destructor
-  ~TpcSpaceChargeMatrixContainerv3() override = default;
+  ~TpcSpaceChargeMatrixContainer1D() override = default;
 
   ///@name accessors
   //@{
@@ -31,13 +31,13 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
   void identify(std::ostream& os = std::cout) const override;
 
   /// get grid dimensions
-  void get_grid_dimensions(int& pbins, int& rbins, int& zbins) const override;
+  void get_grid_dimensions(int& bins) const override;
 
   /// get grid size
   int get_grid_size() const override;
 
   /// get grid index for given sub-indexes
-  int get_cell_index(int irbin, int izbin) const override;
+  int get_cell_index(int ibin) const override;
 
   /// get entries for a given cell
   int get_entries(int cell_index) const override;
@@ -57,11 +57,7 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
   void Reset() override;
 
   /// set grid dimensions
-  /**
-  \param rbins the number of bins along r
-  \param zbins the number of bins along z
-  */
-  void set_grid_dimensions(int pbins, int rbins, int zbins) override;
+  void set_grid_dimensions(int bins) override;
 
   /// increment cell entries
   void add_to_entries(int cell_index) override
@@ -98,9 +94,7 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
 
   ///@name grid size
   //@{
-  int m_pbins = 36; // only for extrapolation
-  int m_rbins = 16;
-  int m_zbins = 80;
+  int m_bins = 48;
   //@}
 
   //! number of coordinates
@@ -122,7 +116,7 @@ class TpcSpaceChargeMatrixContainerv3 : public TpcSpaceChargeMatrixContainer
   /// keep track of how many entries are used per cells
   std::vector<int> m_entries;
 
-  ClassDefOverride(TpcSpaceChargeMatrixContainerv3, 1)
+  ClassDefOverride(TpcSpaceChargeMatrixContainer1D, 1)
 };
 
 #endif

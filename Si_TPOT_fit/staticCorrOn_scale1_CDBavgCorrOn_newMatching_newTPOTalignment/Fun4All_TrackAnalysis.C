@@ -39,7 +39,7 @@
 #include <trackingdiagnostics/TrkrNtuplizer.h>
 
 //#include <distortionanalysis/DistortionAnalysis.h>
-#include <distortionanalysis/PHTrackPruner.h>
+#include <trackreco/PHTrackPruner.h>
 
 #include <stdio.h>
 
@@ -284,11 +284,11 @@ void Fun4All_TrackAnalysis(
   trackpruner->set_nmvtx_clus_low_cut(3);
   trackpruner->set_nintt_clus_low_cut(2);
   trackpruner->set_ntpc_clus_low_cut(35);
-  trackpruner->set_ntpot_clus_low_cut(2);
+  trackpruner->set_ntpot_clus_low_cut(1);
   trackpruner->set_nmvtx_states_low_cut(3);
   trackpruner->set_nintt_states_low_cut(2);
   trackpruner->set_ntpc_states_low_cut(35);
-  trackpruner->set_ntpot_states_low_cut(2);
+  trackpruner->set_ntpot_states_low_cut(1);
   se->registerSubsystem(trackpruner);
 
   // perform final track fit with ACTS

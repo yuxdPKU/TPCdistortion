@@ -18,7 +18,8 @@ void plot()
   for (int k=0; k<nrun; k++)
   {
     TChain* chain_noavg = new TChain("residualtree");
-    chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_3/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
+    chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_4/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
+    //chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_3/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
     //chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_2/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
     TChain* chain_Ben = new TChain("residualtree");
     chain_Ben->Add(Form("../staticCorrOn_scale1_BenMap_3/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));

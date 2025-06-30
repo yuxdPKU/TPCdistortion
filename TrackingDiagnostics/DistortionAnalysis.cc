@@ -16,8 +16,14 @@
 #include <g4detectors/PHG4TpcCylinderGeom.h>
 #include <g4detectors/PHG4TpcCylinderGeomContainer.h>
 
+#include <globalvertex/MbdVertex.h>
+#include <globalvertex/MbdVertexMap.h>
+
 #include <intt/CylinderGeomIntt.h>
 #include <intt/CylinderGeomInttHelper.h>
+
+#include <mbd/MbdPmtContainer.h>
+#include <mbd/MbdPmtHit.h>
 
 #include <micromegas/CylinderGeomMicromegas.h>
 #include <micromegas/MicromegasDefs.h>
@@ -71,6 +77,12 @@ namespace
   std::vector<TrkrDefs::cluskey> get_cluster_keys(SvtxTrack* track)
   {
     std::vector<TrkrDefs::cluskey> out;
+
+    if(!track)
+      {
+	return out;
+      }
+    
     for (const auto& seed : {track->get_silicon_seed(), track->get_tpc_seed()})
     {
       if (seed)
@@ -258,6 +270,39 @@ int DistortionAnalysis::process_event(PHCompositeNode* topNode)
       }
     }
   }
+  
+  m_mbdvtxz = std::numeric_limits<float>::quiet_NaN();
+
+  MbdVertexMap *mbdvertexmap = findNode::getClass<MbdVertexMap>(topNode, "MbdVertexMap");
+  if(mbdvertexmap)
+  {
+    for (auto it = mbdvertexmap->begin(); it != mbdvertexmap->end(); ++it)
+    {
+      MbdVertex* mbdvertex = it->second;
+      if (mbdvertex)
+      {
+        m_mbdvtxz = mbdvertex->get_z();
+      }
+    }
+  }
+  MbdPmtContainer* bbcpmts = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+  m_totalmbd = 0;
+  if (bbcpmts)
+  {
+    int nPMTs = bbcpmts->get_npmt();
+    for (int i = 0; i < nPMTs; i++)
+    {
+      m_totalmbd += bbcpmts->get_pmt(i)->get_q();
+    }
+  }
+  else
+  {
+    if (Verbosity() > 0)
+    {
+      std::cout << "TrackResiduals::process_event: Could not find MbdPmtContainer," << std::endl;
+    }
+  }
+
   m_ntpcclus = 0;
   if (Verbosity() > 1)
   {
@@ -488,6 +533,7 @@ void DistortionAnalysis::fillVertexTree(PHCompositeNode* topNode)
       m_vy = vertex->get_y();
       m_vz = vertex->get_z();
       m_ntracks = vertex->size_tracks();
+
       for (auto it = vertex->begin_tracks(); it != vertex->end_tracks(); ++it)
       {
         auto id = *it;
@@ -1576,6 +1622,7 @@ void DistortionAnalysis::createBranches()
     m_eventtree->Branch("nsiseed", &m_nsiseed, "m_nsiseed/I");
     m_eventtree->Branch("ntpcseed", &m_ntpcseed, "m_ntpcseed/I");
     m_eventtree->Branch("ntracks", &m_ntracks_all, "m_ntracks_all/I");
+    m_eventtree->Branch("mbdcharge",&m_totalmbd, "m_totalmbd/F");
   }
 
   if (m_doFailedSeeds)
@@ -1629,6 +1676,7 @@ void DistortionAnalysis::createBranches()
   m_vertextree->Branch("gy", &m_clusgy);
   m_vertextree->Branch("gz", &m_clusgz);
   m_vertextree->Branch("gr", &m_clusgr);
+  m_vertextree->Branch("mbdcharge", &m_totalmbd, "m_totalmbd/F");
   }
 
   if (m_doHits)
@@ -1660,6 +1708,7 @@ void DistortionAnalysis::createBranches()
   m_hittree->Branch("strip", &m_strip, "m_strip/I");
   m_hittree->Branch("adc", &m_adc, "m_adc/F");
   m_hittree->Branch("zdriftlength", &m_zdriftlength, "m_zdriftlength/F");
+  m_hittree->Branch("mbdcharge",&m_totalmbd, "m_totalmbd/F");
   }
 
   if (m_doClusters)
@@ -1682,13 +1731,24 @@ void DistortionAnalysis::createBranches()
   m_clustree->Branch("erphi", &m_scluselx, "m_scluselx/F");
   m_clustree->Branch("ez", &m_scluselz, "m_scluselz/F");
   m_clustree->Branch("maxadc", &m_clusmaxadc, "m_clusmaxadc/F");
-  m_clustree->Branch("hitsetkey", &m_hitsetkey, "m_hitsetkey/i");
+  m_clustree->Branch("sector", &m_clussector, "m_clussector/I");
+  m_clustree->Branch("side", &m_side, "m_side/I");
+  m_clustree->Branch("stave", &m_staveid, "m_staveid/I");
+  m_clustree->Branch("chip", &m_chipid, "m_chipid/I");
+  m_clustree->Branch("strobe", &m_strobeid, "m_strobeid/I");
+  m_clustree->Branch("ladderz", &m_ladderzid, "m_ladderzid/I");
+  m_clustree->Branch("ladderphi", &m_ladderphiid, "m_ladderphiid/I");
+  m_clustree->Branch("timebucket", &m_timebucket, "m_timebucket/I");
+  m_clustree->Branch("segtype", &m_segtype, "m_segtype/I");
+  m_clustree->Branch("tile", &m_tileid, "m_tileid/I");
   }
 
   m_tree = new TTree("residualtree", "A tree with track, cluster, and state info");
   m_tree->Branch("run", &m_runnumber, "m_runnumber/I");
   m_tree->Branch("segment", &m_segment, "m_segment/I");
   m_tree->Branch("event", &m_event, "m_event/I");
+  m_tree->Branch("mbdcharge",&m_totalmbd, "m_totalmbd/F");
+  m_tree->Branch("mbdzvtx", &m_mbdvtxz, "m_mbdvtxz/F");
   m_tree->Branch("runNumber", &m_runNumber, "m_runNumber/I");
   m_tree->Branch("eventNumber", &m_eventNumber, "m_eventNumber/I");
   m_tree->Branch("firedTriggers", &m_firedTriggers);
@@ -1761,6 +1821,9 @@ void DistortionAnalysis::createBranches()
   m_tree->Branch("dcaz", &m_dcaz, "m_dcaz/F");
 
   /*
+  m_tree->Branch("clussector", &m_clsector);
+  m_tree->Branch("cluslayer", &m_cluslayer);
+  m_tree->Branch("clusside", &m_clside);
   m_tree->Branch("cluskeys", &m_cluskeys);
   m_tree->Branch("clusedge", &m_clusedge);
   m_tree->Branch("clusoverlap", &m_clusoverlap);
