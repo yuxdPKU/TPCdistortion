@@ -23,6 +23,7 @@ class SvtxTrackMap;
 class TpcSpaceChargeMatrixContainer;
 class TrkrCluster;
 class TrkrClusterContainer;
+class ActGeometry;
 
 class TFile;
 class TH1;
@@ -201,6 +202,9 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
   float m_max_dz = 0.5;
   //@}
 
+  float m_zmin = 0;
+  float m_zmax = 0;
+  
   // cuts on rphi, z residuals errors
   float m_minRPhiErr = 0.005;  // 0.005cm -- 50um
   float m_minZErr = 0.01;  // 0.01cm -- 100um
@@ -248,6 +252,8 @@ class TpcSpaceChargeReconstruction : public SubsysReco, public PHParameterInterf
 
   //! tpc global position wrapper
   TpcGlobalPositionWrapper m_globalPositionWrapper;
+
+ ActsGeometry *m_tGeometry = nullptr;
 
   /// disable distortion correction
   bool m_disable_module_edge_corr = false;

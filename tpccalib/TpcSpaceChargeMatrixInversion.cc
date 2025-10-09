@@ -5,7 +5,7 @@
  */
 
 #include "TpcSpaceChargeMatrixInversion.h"
-#include "TpcSpaceChargeMatrixContainerv1.h"
+#include "TpcSpaceChargeMatrixContainerv2.h"
 #include "TpcSpaceChargeReconstructionHelper.h"
 
 #include <frog/FROG.h>
@@ -33,9 +33,9 @@ namespace
   static constexpr float m_rmax = 78;
 
   // z range
-  static constexpr float m_zmin = -105.5;
-  static constexpr float m_zmax = 105.5;
-
+  float m_zmax =  102.605;
+  float m_zmin = -102.605;
+  
   // convert internal data from TpcSpaceChargeMatrixContainer to 2D Eighen::Matrix
   template<float (TpcSpaceChargeMatrixContainer::*accessor)(int /*cell*/, int /*row*/, int /*column*/) const, int N>
     Eigen::Matrix<float, N, N> get_matrix( const TpcSpaceChargeMatrixContainer* container, int icell )
@@ -176,7 +176,7 @@ bool TpcSpaceChargeMatrixInversion::add(const TpcSpaceChargeMatrixContainer& sou
   // check internal container, create if necessary
   if (!m_matrix_container)
   {
-    m_matrix_container.reset(new TpcSpaceChargeMatrixContainerv1);
+    m_matrix_container.reset(new TpcSpaceChargeMatrixContainerv2);
 
     // get grid dimensions from source
     int phibins = 0;
@@ -294,7 +294,7 @@ void TpcSpaceChargeMatrixInversion::calculate_distortion_corrections(const Inver
           case InversionMode::ReducedInversion_z:
           {
             /* number of coordinates must match that of the matrix container */
-            static constexpr int ncoord = 3;
+            static constexpr int ncoord = 2;
             using matrix_t = Eigen::Matrix<float, ncoord, ncoord>;
             using column_t = Eigen::Matrix<float, ncoord, 1>;
 

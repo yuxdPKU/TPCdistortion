@@ -22,6 +22,7 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrackState.h>
+#include <trackbase_historic/TrackAnalysisUtils.h>
 #include <trackbase_historic/TrackSeed.h>
 #include <trackbase_historic/TrackSeedHelper.h>
 
@@ -100,6 +101,7 @@ QAG4SimulationDistortions::~QAG4SimulationDistortions() = default;
 //____________________________________________________________________________..
 int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
 {
+
   // reset counters
   m_total_tracks = 0;
   m_accepted_tracks = 0;
@@ -108,7 +110,7 @@ int QAG4SimulationDistortions::Init(PHCompositeNode* /*unused*/)
   m_accepted_states = 0;
 
   // histogram manager
-  auto* hm = QAHistManagerDef::getHistoManager();
+  auto hm = QAHistManagerDef::getHistoManager();
   assert(hm);
 
   TH1* h(nullptr);
@@ -559,7 +561,16 @@ int QAG4SimulationDistortions::process_event(PHCompositeNode* /*unused*/)
       m_trackPt = track->get_pt();
       m_charge = track->get_charge();
       m_crossing = track->get_crossing();
-      m_trackdEdx = calc_dedx(tpcSeed, m_clusterContainer, m_tpcGeom);
+
+      float layerThicknesses[4] = {0.0, 0.0, 0.0, 0.0};
+      // These are randomly chosen layer thicknesses for the TPC, to get the
+      // correct region thicknesses in an easy to pass way to the helper fxn
+      layerThicknesses[0] = m_tpcGeom->GetLayerCellGeom(7)->get_thickness();
+      layerThicknesses[1] = m_tpcGeom->GetLayerCellGeom(8)->get_thickness();
+      layerThicknesses[2] = m_tpcGeom->GetLayerCellGeom(27)->get_thickness();
+      layerThicknesses[3] = m_tpcGeom->GetLayerCellGeom(50)->get_thickness();
+
+      m_trackdEdx = TrackAnalysisUtils::calc_dedx(tpcSeed, m_clusterContainer, m_tGeometry, layerThicknesses);
 
       m_tanAlpha_mover = trackAlpha_mover;
       m_tanBeta_mover = trackBeta_mover;
@@ -661,7 +672,7 @@ bool QAG4SimulationDistortions::checkTrack(SvtxTrack* track)
 //    return false;
 //  }
 
-  if (checkTPOTResidual(track)==false)
+  if (m_useMicromegas && checkTPOTResidual(track)==false)
   {
     return false;
   }
@@ -1005,59 +1016,4 @@ void QAG4SimulationDistortions::get_MvtxInttTpot_info(SvtxTrack* track)
       m_stateeta_tpot.push_back(m_stateeta);
     }
   }
-}
-
-float QAG4SimulationDistortions::calc_dedx(TrackSeed* tpcseed, TrkrClusterContainer* clustermap, PHG4TpcCylinderGeomContainer* tpcGeom)
-{
-  std::vector<TrkrDefs::cluskey> clusterKeys;
-  clusterKeys.insert(clusterKeys.end(), tpcseed->begin_cluster_keys(),
-                     tpcseed->end_cluster_keys());
-
-  std::vector<float> dedxlist;
-  for (unsigned long cluster_key : clusterKeys)
-  {
-    auto detid = TrkrDefs::getTrkrId(cluster_key);
-    if (detid != TrkrDefs::TrkrId::tpcId)
-    {
-      continue;  // the micromegas clusters are added to the TPC seeds
-    }
-    unsigned int layer_local = TrkrDefs::getLayer(cluster_key);
-    TrkrCluster* cluster = clustermap->findCluster(cluster_key);
-    float adc = cluster->getAdc();
-    PHG4TpcCylinderGeom* GeoLayer_local = tpcGeom->GetLayerCellGeom(layer_local);
-    float thick = GeoLayer_local->get_thickness();
-    float r = GeoLayer_local->get_radius();
-    float alpha = (r * r) / (2 * r * TMath::Abs(1.0 / tpcseed->get_qOverR()));
-    float beta = atan(tpcseed->get_slope());
-    float alphacorr = cos(alpha);
-    if (alphacorr < 0 || alphacorr > 4)
-    {
-      alphacorr = 4;
-    }
-    float betacorr = cos(beta);
-    if (betacorr < 0 || betacorr > 4)
-    {
-      betacorr = 4;
-    }
-    adc /= thick;
-    adc *= alphacorr;
-    adc *= betacorr;
-    dedxlist.push_back(adc);
-    sort(dedxlist.begin(), dedxlist.end());
-  }
-  int trunc_min = 0;
-  if (dedxlist.size() < 1)
-  {
-    return std::numeric_limits<float>::quiet_NaN();
-  }
-  int trunc_max = (int) dedxlist.size() * 0.7;
-  float sumdedx = 0;
-  int ndedx = 0;
-  for (int j = trunc_min; j <= trunc_max; j++)
-  {
-    sumdedx += dedxlist.at(j);
-    ndedx++;
-  }
-  sumdedx /= ndedx;
-  return sumdedx;
 }

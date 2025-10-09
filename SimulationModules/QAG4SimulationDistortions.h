@@ -41,6 +41,12 @@ class QAG4SimulationDistortions : public SubsysReco
   void disableAverageCorr() { m_disable_average_corr = true; }
   void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
 
+  /// require micromegas to be present when extrapolating tracks to the TPC
+  void setUseMicromegas(bool value)
+  {
+    m_useMicromegas = value;
+  }
+
  private:
 
   //! track map name
@@ -55,7 +61,6 @@ class QAG4SimulationDistortions : public SubsysReco
   std::vector<TrkrDefs::cluskey> get_state_keys(SvtxTrack* track);
   bool checkTrack(SvtxTrack* track);
   bool checkTPOTResidual(SvtxTrack* track);
-  float calc_dedx(TrackSeed* tpcseed, TrkrClusterContainer* clustermap, PHG4TpcCylinderGeomContainer* tpcGeom);
   void clearVector();
   void get_MvtxInttTpot_info(SvtxTrack* track);
   SvtxTrackMap* m_trackMap = nullptr;
@@ -181,6 +186,7 @@ class QAG4SimulationDistortions : public SubsysReco
   int m_accepted_states = 0;
   //@}
 
+  bool m_useMicromegas = true;
 
 };
 
