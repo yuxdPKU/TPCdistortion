@@ -47,7 +47,6 @@ pkginclude_HEADERS = \
   TpcSpaceChargeMatrixInversion.h \
   TpcSpaceChargeMatrixInversion1D.h \
   TpcSpaceChargeMatrixInversion2D.h \
-  TpcSpaceChargeReconstruction.h \
   TpcSpaceChargeReconstructionHelper.h \
   PHTpcResiduals.h \
   TpcCentralMembraneMatching.h \
@@ -81,7 +80,6 @@ libtpccalib_la_SOURCES = \
   TpcSpaceChargeMatrixInversion.cc \
   TpcSpaceChargeMatrixInversion1D.cc \
   TpcSpaceChargeMatrixInversion2D.cc \
-  TpcSpaceChargeReconstruction.cc \
   TpcSpaceChargeReconstructionHelper.cc \
   PHTpcResiduals.cc \
   TpcCentralMembraneMatching.cc \

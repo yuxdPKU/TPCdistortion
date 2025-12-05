@@ -27,7 +27,7 @@ class SvtxTrack;
 class TrackSeed;
 class TrkrClusterContainer;
 class TrkrHitSetContainer;
-class PHG4TpcCylinderGeomContainer;
+class PHG4TpcGeomContainer;
 class PHG4CylinderGeomContainer;
 class TpcDistortionCorrectionContainer;
 class DistortionAnalysis : public SubsysReco
@@ -74,7 +74,7 @@ class DistortionAnalysis : public SubsysReco
   void fillEventTree(PHCompositeNode *topNode);
   void fillClusterTree(TrkrClusterContainer *clusters, ActsGeometry *geometry);
   void fillHitTree(TrkrHitSetContainer *hitmap, ActsGeometry *geometry,
-                   PHG4TpcCylinderGeomContainer *tpcGeom, PHG4CylinderGeomContainer *mvtxGeom,
+                   PHG4TpcGeomContainer *tpcGeom, PHG4CylinderGeomContainer *mvtxGeom,
                    PHG4CylinderGeomContainer *inttGeom, PHG4CylinderGeomContainer *mmGeom);
   void fillResidualTreeKF(PHCompositeNode *topNode);
   void fillResidualTreeSeeds(PHCompositeNode *topNode);
@@ -200,7 +200,8 @@ class DistortionAnalysis : public SubsysReco
   float m_dcaxy = std::numeric_limits<float>::quiet_NaN();
   float m_dcaz = std::numeric_limits<float>::quiet_NaN();
   float m_tracklength = std::numeric_limits<float>::quiet_NaN();
-
+  
+  int m_silseedit = std::numeric_limits<int>::quiet_NaN();
   float m_silseedx = std::numeric_limits<float>::quiet_NaN();
   float m_silseedy = std::numeric_limits<float>::quiet_NaN();
   float m_silseedz = std::numeric_limits<float>::quiet_NaN();
@@ -219,7 +220,8 @@ class DistortionAnalysis : public SubsysReco
   int m_tpcseedcharge = std::numeric_limits<int>::quiet_NaN();
   float m_tpcseedphi = std::numeric_limits<float>::quiet_NaN();
   float m_tpcseedeta = std::numeric_limits<float>::quiet_NaN();
-
+  int m_tpcseedit = std::numeric_limits<int>::quiet_NaN();
+  
   float m_dedx = std::numeric_limits<float>::quiet_NaN();
 
   //! hit tree info
@@ -282,6 +284,10 @@ class DistortionAnalysis : public SubsysReco
   std::vector<float> m_clusgyunmoved;
   std::vector<float> m_clusgzunmoved;
   std::vector<float> m_clusgr;
+  std::vector<int> m_clstave;
+  std::vector<int> m_clchip;
+  std::vector<int> m_clladderz;
+  std::vector<int> m_clladderphi;
   std::vector<int> m_clsector;
   std::vector<int> m_clside;
   std::vector<int> m_cluslayer;

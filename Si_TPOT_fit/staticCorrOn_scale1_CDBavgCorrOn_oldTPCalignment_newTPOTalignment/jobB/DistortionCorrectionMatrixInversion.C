@@ -151,7 +151,7 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   // perform matrix inversion
   TpcSpaceChargeMatrixInversion spaceChargeMatrixInversion;
   spaceChargeMatrixInversion.Verbosity(0);
-  spaceChargeMatrixInversion.set_min_cluster_count(15);
+  spaceChargeMatrixInversion.set_min_cluster_count(1000);
 
   // load input files
   for( const auto& file:filenames )
@@ -172,7 +172,7 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   // perform matrix inversion
   TpcSpaceChargeMatrixInversion spaceChargeMatrixInversion_phi;
   spaceChargeMatrixInversion_phi.Verbosity(0);
-  spaceChargeMatrixInversion_phi.set_min_cluster_count(15);
+  spaceChargeMatrixInversion_phi.set_min_cluster_count(1000);
 
   // load input files
   for( const auto& file:filenames )
@@ -193,7 +193,7 @@ void DistortionCorrectionMatrixInversion(int run=53285)
   // perform matrix inversion
   TpcSpaceChargeMatrixInversion spaceChargeMatrixInversion_r;
   spaceChargeMatrixInversion_r.Verbosity(0);
-  spaceChargeMatrixInversion_r.set_min_cluster_count(15);
+  spaceChargeMatrixInversion_r.set_min_cluster_count(1000);
 
   // load input files
   for( const auto& file:filenames )

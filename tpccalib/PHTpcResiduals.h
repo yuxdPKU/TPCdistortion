@@ -1,29 +1,27 @@
 #ifndef TRACKRECO_PHTPCRESIDUALS_H
 #define TRACKRECO_PHTPCRESIDUALS_H
 
-#include <fun4all/SubsysReco.h>
+#include "TpcSpaceChargeMatrixContainer.h"  // for TpcSpaceChargeMa...
+
 #include <tpc/TpcGlobalPositionWrapper.h>
-#include <trackbase/ActsGeometry.h>
+
 #include <trackbase/TrkrDefs.h>
-#include <trackbase_historic/ActsTransformations.h>
 
-#include <Acts/EventData/TrackParameters.hpp>
-#include <Acts/Utilities/Result.hpp>
+#include <fun4all/SubsysReco.h>
 
+#include <Acts/Definitions/Algebra.hpp>  // for Vector3
+
+#include <cmath>
 #include <memory>
-#include <optional>
+#include <string>   // for basic_string
+#include <utility>  // for pair
 
+class ActsGeometry;
+class SvtxTrackState;
 class PHCompositeNode;
 class SvtxTrack;
 class SvtxTrackMap;
-class TpcSpaceChargeMatrixContainer;
-class TrkrCluster;
 class TrkrClusterContainer;
-
-class TFile;
-class TH1;
-class TH2;
-class TTree;
 
 /**
  * This class takes preliminary fits from PHActsTrkFitter to the
@@ -127,17 +125,20 @@ class PHTpcResiduals : public SubsysReco
     m_useMicromegas = value;
   }
 
+  /// do 1D/2D
+  void do1DGrid() {m_do1DGrid = true;}
+  void do2DGrid() {m_do2DGrid = true;}
+
   void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
   void disableStaticCorr() { m_disable_static_corr = true; }
   void disableAverageCorr() { m_disable_average_corr = true; }
   void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
 
- private:
-  using BoundTrackParam =
-      const Acts::BoundTrackParameters;
+  /// modify track map name
+  void setTrackMapName( const std::string& value )
+  { m_trackmapname = value; }
 
-  /// pairs path length and track parameters
-  using BoundTrackParamPair = std::pair<float, BoundTrackParam>;
+ private:
 
   int getNodes(PHCompositeNode *topNode);
   int createNodes(PHCompositeNode *topNode);
@@ -149,26 +150,15 @@ class PHTpcResiduals : public SubsysReco
   bool checkTPOTResidual(SvtxTrack* track) const;
   void processTrack(SvtxTrack *track);
 
-  /// fill track state from bound track parameters
-  void addTrackState(SvtxTrack *track, TrkrDefs::cluskey key, float pathlength, const Acts::BoundTrackParameters &params);
-
   /// Gets distortion cell for identifying bins in TPC
   int getCell(const Acts::Vector3 &loc);
   int getCell_layer(const int layer);
   int getCell_radius(const Acts::Vector3 &loc);
   int getCell_rz(const Acts::Vector3 &loc);
 
-  //! create ACTS track parameters from Svtx track
-  Acts::BoundTrackParameters makeTrackParams(SvtxTrack *) const;
-
-  //! create ACTS track parameters from Svtx track state
-  Acts::BoundTrackParameters makeTrackParams(SvtxTrack *, SvtxTrackState *) const;
-
-  /// acts transformation
-  ActsTransformations m_transformer;
-
   /// Node information for Acts tracking geometry and silicon+MM
   /// track fit
+  std::string m_trackmapname = "SvtxSiliconMMTrackMap";
   SvtxTrackMap *m_trackMap = nullptr;
   ActsGeometry *m_tGeometry = nullptr;
   TrkrClusterContainer *m_clusterContainer = nullptr;
@@ -182,7 +172,7 @@ class PHTpcResiduals : public SubsysReco
   float m_maxResidualDz = 0.5;  // cm
 
   float m_minRPhiErr = 0.005;  // 0.005cm -- 50um
-  float m_minZErr = 0.01;  // 0.01cm -- 100um
+  float m_minZErr = 0.01;      // 0.01cm -- 100um
 
   static constexpr float m_phiMin = 0;
   static constexpr float m_phiMax = 2. * M_PI;
@@ -198,7 +188,7 @@ class PHTpcResiduals : public SubsysReco
   /// Tpc geometry
   static constexpr unsigned int m_nLayersTpc = 48;
   float m_zMin = 0;  // cm
-  float m_zMax = 0;   // cm
+  float m_zMax = 0;  // cm
 
   /// matrix container
   std::unique_ptr<TpcSpaceChargeMatrixContainer> m_matrix_container;
@@ -223,11 +213,15 @@ class PHTpcResiduals : public SubsysReco
   /// track eta cut, only apply if m_requireCM is enabled
   double m_etacut = 0.25; // +/- 0.25
 
+  /// require track near CM, only for 1D distortion map (layer or radius)
+  bool m_requireCM = false;
+
   /// require track crossing zero
   bool m_requireCrossing = false;
 
-  /// require track near CM, only for 1D distortion map (layer or radius)
-  bool m_requireCM = false;
+  /// if do 1D/2D
+  bool m_do1DGrid = false;
+  bool m_do2DGrid = false;
 
   /// disable distortion correction
   bool m_disable_module_edge_corr = false;

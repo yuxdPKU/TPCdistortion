@@ -63,11 +63,6 @@ TLine *l_sci_i_R[nrun], *l_sci_o_R[nrun], *l_sco_i_R[nrun], *l_sco_o_R[nrun];
 TLine *l_sci_i_P[nrun], *l_sci_o_P[nrun], *l_sco_i_P[nrun], *l_sco_o_P[nrun];
 TLine *l_sci_i_Z[nrun], *l_sci_o_Z[nrun], *l_sco_i_Z[nrun], *l_sco_o_Z[nrun];
 
-double ymax_N=-100, ymin_N=100;
-double ymax_R=-100, ymin_R=100;
-double ymax_P=-100, ymin_P=100;
-double ymax_Z=-100, ymin_Z=100;
-
 for (int i = 0; i < nrun; i++)
 {
 
