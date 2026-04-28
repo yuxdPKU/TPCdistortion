@@ -61,6 +61,16 @@ class PHTpcResiduals : public SubsysReco
   {
     m_maxResidualDz = maxResidualDz;
   }
+
+  void setMaxTrackResidualDrphi_TPOT(float maxResidualDrphi)
+  {
+    m_maxResidualDrphi_TPOT = maxResidualDrphi;
+  }
+
+  void setMaxTrackResidualDz_TPOT(float maxResidualDz)
+  {
+    m_maxResidualDz_TPOT = maxResidualDz;
+  }
   //@}
 
   void setMinRPhiErr(float minRPhiErr)
@@ -129,10 +139,25 @@ class PHTpcResiduals : public SubsysReco
   void do1DGrid() {m_do1DGrid = true;}
   void do2DGrid() {m_do2DGrid = true;}
 
-  void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
-  void disableStaticCorr() { m_disable_static_corr = true; }
-  void disableAverageCorr() { m_disable_average_corr = true; }
-  void disableFluctuationCorr() { m_disable_fluctuation_corr = true; }
+  void disableModuleEdgeCorr()
+  {
+    m_globalPositionWrapper.set_enable_module_edge_corr(false);
+  }
+
+  void disableStaticCorr()
+  {
+    m_globalPositionWrapper.set_enable_static_corr(false);
+  }
+
+  void disableAverageCorr()
+  {
+    m_globalPositionWrapper.set_enable_average_corr(false);
+  }
+
+  void disableFluctuationCorr()
+  {
+    m_globalPositionWrapper.set_enable_fluctuation_corr(false);
+  }
 
   /// modify track map name
   void setTrackMapName( const std::string& value )
@@ -168,8 +193,10 @@ class PHTpcResiduals : public SubsysReco
 
   float m_maxTAlpha = 0.6;
   float m_maxResidualDrphi = 0.5;  // cm
+  float m_maxResidualDrphi_TPOT = 0.1;  // cm
   float m_maxTBeta = 1.5;
   float m_maxResidualDz = 0.5;  // cm
+  float m_maxResidualDz_TPOT = 1;  // cm
 
   float m_minRPhiErr = 0.005;  // 0.005cm -- 50um
   float m_minZErr = 0.01;      // 0.01cm -- 100um
@@ -222,12 +249,6 @@ class PHTpcResiduals : public SubsysReco
   /// if do 1D/2D
   bool m_do1DGrid = false;
   bool m_do2DGrid = false;
-
-  /// disable distortion correction
-  bool m_disable_module_edge_corr = false;
-  bool m_disable_static_corr = false;
-  bool m_disable_average_corr = false;
-  bool m_disable_fluctuation_corr = false;
 
   /// output file
   std::string m_outputfile = "TpcSpaceChargeMatrices.root";

@@ -12,26 +12,16 @@ void plot()
   //int runs[7] = {53285, 53534, 53744, 53756, 53877, 53876, 53630};
   //int mbdrates[nrun] = {250, 300, 380, 400, 430, 550};
   //int runs[nrun] = {53534, 53744, 53756, 53877, 53876, 53630};
-  int mbdrates[nrun] = {400};
-  int runs[nrun] = {53877};
+  int runs[nrun] = {52077};
 
   for (int k=0; k<nrun; k++)
   {
     TChain* chain_noavg = new TChain("residualtree");
-    chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_4/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
-    //chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_3/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
-    //chain_noavg->Add(Form("../staticCorrOn_scale1_noavgCorr_2/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
+    chain_noavg->Add(Form("../zeroField_weightedFitter_noAvgCorr/root/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
     TChain* chain_Ben = new TChain("residualtree");
-    chain_Ben->Add(Form("../staticCorrOn_scale1_BenMap_3/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
-    //chain_Ben->Add(Form("../staticCorrOn_scale1_BenMap_2/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
+    chain_Ben->Add(Form("../zeroField_weightedFitter_LaminationCorr/root/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
     TChain* chain_Xudong = new TChain("residualtree");
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_5/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_5/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
-    chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_6/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_4/root/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_4/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_3/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
-    //chain_Xudong->Add(Form("../staticCorrOn_scale1_XudongMap_2/Reconstructed/%d/clusters_seeds_%d-0.root_resid.root",runs[k],runs[k]));
+    chain_Xudong->Add(Form("../zeroField_weightedFitter_TrackBasedCorr/root/Reconstructed/%d/clusters_seeds_%d-*.root_resid.root",runs[k],runs[k]));
 
     TH1* h_quality_noavg = new TH1F("h_quality_noavg","quality;quality;Counts",90, 0,300);
     TH1* h_quality_Ben = new TH1F("h_quality_Ben","quality;quality;Counts",90, 0,300);
@@ -90,8 +80,8 @@ void plot1D(TH1* h_noavg, TH1* h_Ben, TH1* h_Xudong, TChain* chain_noavg, TChain
     h_Xudong->Draw("hist,same");
     TLegend *legend = new TLegend(0.45, 0.75, 0.72, 0.9);
     legend->AddEntry(h_noavg, "No average correction", "l");
-    legend->AddEntry(h_Ben, "Ben's Map", "l");
-    legend->AddEntry(h_Xudong, "Xudong's Map", "l");
+    legend->AddEntry(h_Ben, "Lamination Map", "l");
+    legend->AddEntry(h_Xudong, "Si-TPOT Map", "l");
     legend->Draw("same");
     can->Update();
     can->SaveAs(output);

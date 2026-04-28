@@ -39,21 +39,22 @@ R__LOAD_LIBRARY(libtrackingqa.so)
 bool isGood(const string &infile);
 
 void Fun4All_LaminationClustering(
-    const int nEvents = 0,
-    const int runnumber = 54966,
+    const int nEvents = 100,
+    const int runnumber = 79516,
     const int segment = 0,
-    const std::string &filelist = "filelist",
+    const std::string &filelist = "filelist/79516/rawhit_00000.list",
     const std::string &outfilename = "DST_LAMINATION_CLUSTER",
     const std::string &outdir = "./",
     const int index = 0,
-    const int stepsize = 10
+    const int stepsize = 10,
+    const std::string runspecies = "run3pp"
 )
 {
   auto se = Fun4AllServer::instance();
   se->Verbosity(1);
   auto rc = recoConsts::instance();
 
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
 
   //! flags to set
   Enable::QA = false;
@@ -107,24 +108,42 @@ void Fun4All_LaminationClustering(
 
   G4MAGNET::magfield_rescale = 1;
   TrackingInit();
-  
-  ostringstream ebdcname;
-  for(int ebdc = 0; ebdc < 24; ebdc++)
+
+  std::ostringstream ebdcname;
+  if (runspecies == "run3pp" || runspecies == "run3auau")
   {
-    ebdcname.str("");
-    if(ebdc < 10)
-    {
-      ebdcname<<"0";
-    }
-    ebdcname<<ebdc;
-    Tpc_HitUnpacking(ebdcname.str());
+      for (int ebdc = 0; ebdc < 24; ebdc++)
+      {
+          for (int endpoint = 0; endpoint < 2; endpoint++)
+          {
+              ebdcname.str("");
+              if (ebdc < 10)
+              {
+                  ebdcname << "0";
+              }
+              ebdcname << ebdc << "_" << endpoint;
+              Tpc_HitUnpacking(ebdcname.str());
+          }
+      }
+  }
+  if (runspecies == "run2pp")
+  {
+      for (int ebdc = 0; ebdc < 24; ebdc++)
+      {
+          ebdcname.str("");
+          if (ebdc < 10)
+          {
+              ebdcname << "0";
+          }
+          ebdcname << ebdc;
+          Tpc_HitUnpacking(ebdcname.str());
+      }
   }
   
   Tpc_LaserEventIdentifying();
 
-  TPC_LaminationClustering();
+  //TPC_LaminationClustering();
 
-  /*
   TPC_LaserClustering();
 
   auto tpcclusterizer = new TpcClusterizer;
@@ -133,7 +152,6 @@ void Fun4All_LaminationClustering(
   tpcclusterizer->set_rawdata_reco();
   tpcclusterizer->set_reject_event(G4TPC::REJECT_LASER_EVENTS);
   se->registerSubsystem(tpcclusterizer);
-  */
 
   TString dstfile = theOutfile + "_dst.root";
   std::string dststring(dstfile.Data());

@@ -41,8 +41,8 @@ bool isGood(const string &infile);
 
 void Fun4All_LaminationFitting(
     const int nEvents = 0,
-    const int runnumber = 53018,
-    const std::string &filelist = "lamination_dst_list_53018",
+    const int runnumber =79516,
+    const std::string &filelist = "lamination_dst_list_79516",
     const std::string &outfilename = "LAMINATION_Fit",
     const std::string &outdir = "./",
     bool ppmode = true
@@ -52,7 +52,7 @@ void Fun4All_LaminationFitting(
   se->Verbosity(0);
   auto rc = recoConsts::instance();
 
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
   rc->set_IntFlag("RUNNUMBER", runnumber);
   rc->set_uint64Flag("TIMESTAMP", runnumber);
 

@@ -7,24 +7,25 @@ get_closest_numbers() {
     echo "$lower $upper"
 }
 
-runspecies='run2auau'
+runspecies='run3pp'
 runtype='physics'
-anabuild='ana464'
+anabuild='ana532'
 cdbtag='nocdbtag'
 version='v001'
 
 path=/sphenix/lustre01/sphnxpro/production/${runspecies}/${runtype}/${anabuild}_${cdbtag}_${version}
 echo Searching in ${path}
 
-runs=(54966 54967 54968 54969)
+runs=(79516)
 
-NumEvtPerDst=10000
-NumEvtPerJob=10000
+NumEvtPerDst=1000
+NumEvtPerJob=1000
 NumJobPerDst=$((${NumEvtPerDst} / ${NumEvtPerJob}))
 
 for ((k=0; k<${#runs[@]}; k++))
 do
 
+  run=${runs[$k]}
   if [ -d "filelist/${runs[$k]}" ]; then
     echo "Dir filelist/${runs[$k]} exists. Delete!"
     /usr/bin/rm -rf filelist/${runs[$k]}
@@ -38,43 +39,34 @@ do
 
   nseg=100000000
 
-#  subsystem='INTT'
-#  for ((server=0; server<8; server++))
-#  do
-#    nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}${server}/run_000${numlower}_000${numupper}/dst/*${runs[$k]}* | wc -l`
-#    echo run ${runs[$k]} ${subsystem}${server} raw hit DST ${nsegtemp} segments
-#    if [ $nseg -gt $nsegtemp ]; then
-#      nseg=$nsegtemp
-#    fi
-#  done
-#
-#  subsystem='MVTX'
-#  for ((felix=0; felix<6; felix++))
-#  do
-#    nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}${felix}/run_000${numlower}_000${numupper}/dst/*${runs[$k]}* | wc -l`
-#    echo run ${runs[$k]} ${subsystem}${felix} raw hit DST ${nsegtemp} segments
-#    if [ $nseg -gt $nsegtemp ]; then
-#      nseg=$nsegtemp
-#    fi
-#  done
+  if [[ "${runspecies}" == "run2pp" ]]; then
+    subsystem='TPC'
+    for ((i=0; i<24; i++))
+    do
+      ebdc=$(printf "%02d" $i)
+      nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}/run_000${numlower}_000${numupper}/dst/*${run}* | wc -l`
+      echo run ${run} ${subsystem}${ebdc} raw hit DST ${nsegtemp} segments
+      if [ $nseg -gt $nsegtemp ]; then
+        nseg=$nsegtemp
+      fi
+    done
+  fi
 
-  subsystem='TPC'
-  for ((i=0; i<24; i++))
-  do
-    ebdc=$(printf "%02d" $i)
-    nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}/run_000${numlower}_000${numupper}/dst/*${runs[$k]}* | wc -l`
-    echo run ${runs[$k]} ${subsystem}${ebdc} raw hit DST ${nsegtemp} segments
-    if [ $nseg -gt $nsegtemp ]; then
-      nseg=$nsegtemp
-    fi
-  done
-
-#  subsystem='TPOT'
-#  nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}/run_000${numlower}_000${numupper}/dst/*${runs[$k]}* | wc -l`
-#  echo run ${runs[$k]} ${subsystem} raw hit DST ${nsegtemp} segments
-#  if [ $nseg -gt $nsegtemp ]; then
-#    nseg=$nsegtemp
-#  fi
+  if [[ "${runspecies}" == "run3auau" || "${runspecies}" == "run3pp" ]]; then
+    subsystem='ebdc'
+    for ((i=0; i<24; i++))
+    do
+      ebdc=$(printf "%02d" $i)
+      for ((ii=0; ii<2; ii++))
+      do
+        nsegtemp=`ls ${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}_${ii}/run_000${numlower}_000${numupper}/*${run}* | wc -l`
+        echo run ${run} ${subsystem}${ebdc}_${ii} raw hit DST ${nsegtemp} segments
+        if [ $nseg -gt $nsegtemp ]; then
+          nseg=$nsegtemp
+        fi
+      done
+    done
+  fi
 
   for ((j=0; j<${nseg}; j++))
   do
@@ -82,27 +74,28 @@ do
     out=filelist/${runs[$k]}/rawhit_${segment}.list
     > ${out}
 
-#    subsystem='INTT'
-#    for ((server=0; server<8; server++))
-#    do
-#      echo "${path}/DST_STREAMING_EVENT_${subsystem}${server}/run_000${numlower}_000${numupper}/dst/DST_STREAMING_EVENT_${subsystem}${server}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${runs[$k]}-${segment}.root" >> ${out}
-#    done
-#
-#    subsystem='MVTX'
-#    for ((felix=0; felix<6; felix++))
-#    do
-#      echo "${path}/DST_STREAMING_EVENT_${subsystem}${felix}/run_000${numlower}_000${numupper}/dst/DST_STREAMING_EVENT_${subsystem}${felix}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${runs[$k]}-${segment}.root" >> ${out}
-#    done
+    if [[ "${runspecies}" == "run2pp" ]]; then
+      subsystem='TPC'
+      for ((i=0; i<24; i++))
+      do
+        ebdc=$(printf "%02d" $i)
+        #echo "${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}/run_000${numlower}_000${numupper}/dst/DST_STREAMING_EVENT_${subsystem}${ebdc}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${run}-${segment}.root" >> ${out}
+        echo "DST_STREAMING_EVENT_${subsystem}${ebdc}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${run}-${segment}.root" >> ${out}
+      done
+    fi
 
-    subsystem='TPC'
-    for ((i=0; i<24; i++))
-    do
-      ebdc=$(printf "%02d" $i)
-      echo "${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}/run_000${numlower}_000${numupper}/dst/DST_STREAMING_EVENT_${subsystem}${ebdc}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${runs[$k]}-${segment}.root" >> ${out}
-    done
-
-#    subsystem='TPOT'
-#    echo "${path}/DST_STREAMING_EVENT_${subsystem}/run_000${numlower}_000${numupper}/dst/DST_STREAMING_EVENT_${subsystem}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${runs[$k]}-${segment}.root" >> ${out}
+    if [[ "${runspecies}" == "run3auau" || "${runspecies}" == "run3pp" ]]; then
+      subsystem='ebdc'
+      for ((i=0; i<24; i++))
+      do
+        ebdc=$(printf "%02d" $i)
+        for ((ii=0; ii<2; ii++))
+        do
+          #echo "${path}/DST_STREAMING_EVENT_${subsystem}${ebdc}_${ii}/run_000${numlower}_000${numupper}/DST_STREAMING_EVENT_${subsystem}${ebdc}_${ii}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${run}-${segment}.root" >> ${out}
+          echo "DST_STREAMING_EVENT_${subsystem}${ebdc}_${ii}_${runspecies}_${anabuild}_${cdbtag}_${version}-000${run}-${segment}.root" >> ${out}
+        done
+      done
+    fi
 
   done
 

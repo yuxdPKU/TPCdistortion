@@ -280,7 +280,6 @@ bool PHTpcResiduals::checkTrack(SvtxTrack* track) const
   {
     return false;
   }
-  std::cout<<"Hey!!! nintt = "<<count_clusters<TrkrDefs::inttId>(cluster_keys)<<std::endl;
   if (count_clusters<TrkrDefs::inttId>(cluster_keys) < 2)
   {
     return false;
@@ -432,14 +431,14 @@ bool PHTpcResiduals::checkTPOTResidual(SvtxTrack* track) const
     }
 
     // check rphi residual for layer 55
-    if (layer == 55 && std::fabs(drphi) > 0.1)
+    if (layer == 55 && std::fabs(drphi) > m_maxResidualDrphi_TPOT)
     {
       flag = false;
       break;
     }
 
     // check z residual for layer 56
-    if (layer == 56 && std::fabs(dz) > 1)
+    if (layer == 56 && std::fabs(dz) > m_maxResidualDz_TPOT)
     {
       flag = false;
       break;
@@ -1018,22 +1017,6 @@ int PHTpcResiduals::getNodes(PHCompositeNode* topNode)
 
   // tpc global position wrapper
   m_globalPositionWrapper.loadNodes(topNode);
-  if (m_disable_module_edge_corr)
-  {
-    m_globalPositionWrapper.set_enable_module_edge_corr(false);
-  }
-  if (m_disable_static_corr)
-  {
-    m_globalPositionWrapper.set_enable_static_corr(false);
-  }
-  if (m_disable_average_corr)
-  {
-    m_globalPositionWrapper.set_enable_average_corr(false);
-  }
-  if (m_disable_fluctuation_corr)
-  {
-    m_globalPositionWrapper.set_enable_fluctuation_corr(false);
-  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

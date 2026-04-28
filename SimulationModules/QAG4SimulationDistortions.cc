@@ -634,14 +634,14 @@ bool QAG4SimulationDistortions::checkTPOTResidual(SvtxTrack* track)
     }
 
     // check rphi residual for layer 55
-    if (layer == 55 && std::fabs(drphi) > 0.1)
+    if (layer == 55 && std::fabs(drphi) > 1)
     {
       flag = false;
       break;
     }
 
     // check z residual for layer 56
-    if (layer == 56 && std::fabs(dz) > 1)
+    if (layer == 56 && std::fabs(dz) > 2)
     {
       flag = false;
       break;

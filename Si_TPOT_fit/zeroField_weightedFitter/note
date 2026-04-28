@@ -1,0 +1,5 @@
+local alignemnt file copied from /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/TRACKINGALIGNMENT/d3/33/d333e4ad9a3d5677bbb1c1db411cc986_tracking_alignment_inttupdate_ana494_2024p021_v001.txt
+latest silicon+TPC+tpot alignment
+dv and t0 from https://indico.bnl.gov/event/29480/contributions/115897/attachments/65795/113043/Distortions_2025_10_27_hp.pdf
+new TPC geometry
+WeightedFitter

@@ -25,6 +25,7 @@ outfilename=$5
 outdir=$6
 index=$7
 stepsize=$8
+runspecies=$9
 
-root.exe -q -b Fun4All_LaminationClustering.C\($nEvents,$runnumber,$segment,\"${filelist}\",\"${outfilename}\",\"${outdir}\",$index,$stepsize\)
+root.exe -q -b Fun4All_LaminationClustering.C\($nEvents,$runnumber,$segment,\"${filelist}\",\"${outfilename}\",\"${outdir}\",$index,$stepsize,\"${runspecies}\"\)
 echo Script done

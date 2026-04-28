@@ -15,18 +15,15 @@
 #include <trackbase/TrkrClusterContainer.h>
 #include <trackbase/TrkrDefs.h>
 
-//#include <ffaobjects/SyncObject.h>
-
 #include <fun4all/SubsysReco.h>
+
+#include <TGraph.h>
+#include <TGraph2D.h>
 
 #include <memory>
 #include <string>
 
-#include "TGraph.h"
-#include "TGraph2D.h"
-
 class PHCompositeNode;
-// class CMFlashClusterContainer;
 class CMFlashDifferenceContainer;
 class LaserClusterContainer;
 class EventHeader;
@@ -101,15 +98,38 @@ class TpcCentralMembraneMatching : public SubsysReco
     m_averageMode = averageMode;
   }
 
+  void set_totalDistMode(bool totalDistMode)
+  {
+    m_totalDistMode = totalDistMode;
+  }
+
+  void set_skipOutliers(bool skipOutliers)
+  {
+    m_skipOutliers = skipOutliers;
+  }
+
+  void set_manualInterp(bool manualInterp)
+  {
+    m_manualInterp = manualInterp;
+  }
+
   void set_event_sequence(int seq)
   {
     m_event_sequence = seq;
-    m_event_index = 100*seq;
+    m_event_index = 100 * seq;
   }
 
-  //void set_laminationFile(const std::string& filename)
+  void set_stripePatternFile(const std::string &stripePatternFile)
+  {
+    m_stripePatternFile = stripePatternFile;
+  }
+
+  void set_phiHistInRad(bool rad){ m_phiHist_in_rad = rad; }
+
+
+  // void set_laminationFile(const std::string& filename)
   //{
-    //m_lamfilename = filename;
+  // m_lamfilename = filename;
   //}
 
   void set_grid_dimensions(int phibins, int rbins);
@@ -130,7 +150,7 @@ class TpcCentralMembraneMatching : public SubsysReco
 
   double getPhiRotation_smoothed(TH1 *hitHist, TH1 *clustHist, bool side);
 
-  std::vector<int> doGlobalRMatching(TH2 *r_phi, bool pos);
+  std::vector<int> doGlobalRMatching(TH2 *r_phi, bool side);
 
   void getRegionPhiRotation(bool side);
 
@@ -138,6 +158,8 @@ class TpcCentralMembraneMatching : public SubsysReco
 
   //! tpc distortion correction utility class
   TpcDistortionCorrection m_distortionCorrection;
+
+  bool m_phiHist_in_rad{true};
 
   //! CMFlashClusterContainer *m_corrected_CMcluster_map{nullptr};
   LaserClusterContainer *m_corrected_CMcluster_map{nullptr};
@@ -185,9 +207,9 @@ class TpcCentralMembraneMatching : public SubsysReco
   TH1 *hdr3_double{nullptr};
   TH1 *hnclus{nullptr};
 
-  TFile *fout;
+  TFile *fout{};
 
-  TFile *m_debugfile;
+  TFile *m_debugfile{};
   std::string m_debugfilename{"CMMatcher.root"};
 
   TH2 *truth_r_phi[2]{nullptr};
@@ -200,9 +222,12 @@ class TpcCentralMembraneMatching : public SubsysReco
   TTree *match_tree{nullptr};
   TTree *event_tree{nullptr};
 
+  std::string m_stripePatternFile = "/sphenix/u/bkimelman/CMStripePattern.root";
+
   bool m_useHeader{true};
   bool m_averageMode{false};
-
+  bool m_totalDistMode{false};
+  
   std::vector<bool> e_matched;
   std::vector<int> e_truthIndex;
   std::vector<float> e_truthR;
@@ -256,12 +281,12 @@ class TpcCentralMembraneMatching : public SubsysReco
 
   //@}
 
-  //double meanA[2] = {0.0, 0.0};
-  //double meanB[2] = {0.0, 0.0};
-  //double meanC[2] = {0.0, 0.0};
-  //std::vector<double> lamPhis[2];
+  // double meanA[2] = {0.0, 0.0};
+  // double meanB[2] = {0.0, 0.0};
+  // double meanC[2] = {0.0, 0.0};
+  // std::vector<double> lamPhis[2];
 
-  //std::string m_lamfilename = "";
+  // std::string m_lamfilename = "";
 
   unsigned int m_nHitsInCuster_minimum = 5;
 
@@ -274,9 +299,12 @@ class TpcCentralMembraneMatching : public SubsysReco
   std::map<int, float> meanPhiByIndex;
   std::map<int, int> nByIndex;
 
-  TGraph2D *gr_dR[2]{nullptr,nullptr};
-  TGraph2D *gr_dPhi[2]{nullptr,nullptr};
-  TGraph *gr_points[2]{nullptr,nullptr};
+  TGraph2D *gr_dR[2]{nullptr, nullptr};
+  TGraph2D *gr_dPhi[2]{nullptr, nullptr};
+  TGraph *gr_points[2]{nullptr, nullptr};
+
+  TGraph2D *gr_dR_toInterp[2]{nullptr, nullptr};
+  TGraph2D *gr_dPhi_toInterp[2]{nullptr, nullptr};
 
   /// phi cut for matching clusters to pad
   /** TODO: this will need to be adjusted to match beam-induced time averaged distortions */
@@ -286,14 +314,14 @@ class TpcCentralMembraneMatching : public SubsysReco
   //@{
 
   /// distortion correction grid size along phi
-  //int m_phibins{24};
+  // int m_phibins{24};
   int m_phibins{500};
 
   static constexpr float m_phiMin{0};
   static constexpr float m_phiMax{2. * M_PI};
 
   /// distortion correction grid size along r
-  //int m_rbins{12};
+  // int m_rbins{12};
   int m_rbins{500};
 
   static constexpr float m_rMin{20};  // cm
@@ -301,6 +329,7 @@ class TpcCentralMembraneMatching : public SubsysReco
 
   //@}
 
+  /*
   ///@name central membrane pads definitions
   //@{
   static constexpr double mm{1.0};
@@ -367,6 +396,7 @@ class TpcCentralMembraneMatching : public SubsysReco
       std::array<int, nRadii> &nStripesIn,
       std::array<int, nRadii> &nStripesBefore,
       double cx[][nRadii], double cy[][nRadii]);
+  */
 
   /// store centers of all central membrane pads
   std::vector<TVector3> m_truth_pos;
@@ -382,6 +412,8 @@ class TpcCentralMembraneMatching : public SubsysReco
   bool m_fieldOn{true};
   bool m_doFancy{false};
   bool m_doHadd{false};
+  bool m_skipOutliers{false};
+  bool m_manualInterp{false};
 
   std::vector<double> m_reco_RPeaks[2];
   double m_m[2]{};
