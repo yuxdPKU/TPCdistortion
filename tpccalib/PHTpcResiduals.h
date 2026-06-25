@@ -163,6 +163,10 @@ class PHTpcResiduals : public SubsysReco
   void setTrackMapName( const std::string& value )
   { m_trackmapname = value; }
 
+  /// modify track map name
+  void setClusterMapName( const std::string& value )
+  { m_clustermapname = value; }
+
  private:
 
   int getNodes(PHCompositeNode *topNode);
@@ -181,11 +185,19 @@ class PHTpcResiduals : public SubsysReco
   int getCell_radius(const Acts::Vector3 &loc);
   int getCell_rz(const Acts::Vector3 &loc);
 
-  /// Node information for Acts tracking geometry and silicon+MM
-  /// track fit
+  //! track map name
   std::string m_trackmapname = "SvtxSiliconMMTrackMap";
+
+  //! track map
   SvtxTrackMap *m_trackMap = nullptr;
+
+  //! acts geometry
   ActsGeometry *m_tGeometry = nullptr;
+
+  //! cluster map name
+  std::string m_clustermapname = "TRKR_CLUSTER";
+
+  //! cluster map
   TrkrClusterContainer *m_clusterContainer = nullptr;
 
   //! tpc global position wrapper
