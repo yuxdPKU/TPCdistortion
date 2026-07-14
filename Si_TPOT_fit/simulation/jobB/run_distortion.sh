@@ -1,6 +1,7 @@
 runs=( 29 )
 #types=( 'MI_sim_reco_acts' 'MI_sim_reco_genfit' 'MI_sim_reco_truth' )
-types=( 'MI_sim_reco_truth' )
+#types=( 'MI_sim_reco_truth_notpot' )
+types=( 'MI_sim_reco_acts_truthseeding' 'MI_sim_reco_genfit_truthseeding' )
 echo ${#runs[@]}
 echo ${#types[@]}
 for ((k=0; k<${#runs[@]}; k++))

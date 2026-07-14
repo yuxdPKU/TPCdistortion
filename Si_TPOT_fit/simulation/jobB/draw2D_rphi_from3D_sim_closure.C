@@ -37,31 +37,31 @@ struct twoDHist {
     TH2* h_Z_neg;
 };
 
-TH2* MakeRZHist(TH3* h3, TString name, TString title)
+TH2* MakeRPhiHist(TH3* h3, TString name, TString title)
 {
   return new TH2F(name, title,
                   h3->GetYaxis()->GetNbins(), h3->GetYaxis()->GetXmin(), h3->GetYaxis()->GetXmax(),
-                  h3->GetZaxis()->GetNbins(), h3->GetZaxis()->GetXmin(), h3->GetZaxis()->GetXmax());
+                  h3->GetXaxis()->GetNbins(), h3->GetXaxis()->GetXmin(), h3->GetXaxis()->GetXmax());
 }
 
 // 3D x: phi, y: r, z: z
-// 2D x: z, y: z
-void plot2D_Xbin(TH3* h3, TH2* h2, float phi)
+// 2D x: r, y: phi
+void plot2D_Zbin(TH3* h3, TH2* h2, float z)
 {
-  int xbin = h3->GetXaxis()->FindBin(phi);
-  for (int i = 1; i <= h3->GetNbinsY(); i++)
+  int zbin = h3->GetZaxis()->FindBin(z);
+  for (int i = 1; i <= h3->GetNbinsX(); i++)
   {
-    for (int j = 1; j <= h3->GetNbinsZ(); j++)
+    for (int j = 1; j <= h3->GetNbinsY(); j++)
     {
-      double value = h3->GetBinContent(xbin, i, j);
-      double error = h3->GetBinError(xbin, i, j);
+      double value = h3->GetBinContent(i, j, zbin);
+      double error = h3->GetBinError(i, j, zbin);
       if (std::isnan(value))
       {
         value = 0.0;
         error = 0.0;
       }
-      h2->SetBinContent(i, j, value);
-      h2->SetBinError(i, j, error);
+      h2->SetBinContent(j, i, value);
+      h2->SetBinError(j, i, error);
     }
   }
 }
@@ -167,33 +167,12 @@ bool Load3DHists(TFile* file_3D_map, threeDHist& hists3D)
          hists3D.h_N_neg && hists3D.h_P_neg && hists3D.h_R_neg && hists3D.h_Z_neg;
 }
 
-void draw2D_rz_from3D_sim_closure(int run=29, TString tag="MI_sim_reco_acts", TString phiType="central")
+void draw2D_rphi_from3D_sim_closure(int run=29, TString tag="MI_sim_reco_truth_notpot", int selectZ=0)
 {
 gStyle->SetOptStat(0);
 TGaxis::SetMaxDigits(3);
 gSystem->mkdir("figure", true);
 gSystem->mkdir("Rootfiles", true);
-
-phiType.ToLower();
-float selectPhi = 0;
-if (phiType.CompareTo("central")==0)
-{
-  selectPhi = ((-1.72932)+(-1.42713))/2.+2*TMath::Pi();
-}
-else if (phiType.CompareTo("west")==0)
-{
-  selectPhi = ((-1.20634)+(-0.902555))/2.+2*TMath::Pi();
-}
-else if (phiType.CompareTo("east")==0)
-{
-  selectPhi = ((-2.25883)+(-1.9569))/2.+2*TMath::Pi();
-}
-else
-{
-  std::cerr << "Error: unknown phiType = " << phiType << std::endl;
-  std::cerr << "Please use phiType = central, east, or west." << std::endl;
-  return;
-}
 
 TString filename = Form("./Rootfiles/Distortions_full_mm_%d_%s.root", run, tag.Data());
 TFile* file_3D_map = new TFile(filename, "");
@@ -211,23 +190,22 @@ if (!Load3DHists(file_3D_map, hists3D))
   return;
 }
 
-int xbin = hists3D.h_N_pos->GetXaxis()->FindBin(selectPhi);
-double phiBinCenter = hists3D.h_N_pos->GetXaxis()->GetBinCenter(xbin);
-std::cout << "Use phiType = " << phiType
-          << ", phi = " << selectPhi
-          << ", xbin = " << xbin
-          << ", bin center = " << phiBinCenter
+int zbin = hists3D.h_N_pos->GetZaxis()->FindBin(selectZ);
+double zBinCenter = hists3D.h_N_pos->GetZaxis()->GetBinCenter(zbin);
+std::cout << ", selectZ = " << selectZ
+          << ", zbin = " << zbin
+          << ", bin center = " << zBinCenter
           << std::endl;
 
 twoDHist hists2D;
-hists2D.h_N_pos = MakeRZHist(hists3D.h_N_pos, Form("hentries_posz_%s",tag.Data()), Form("N posz @ #phi=%.3f;R (cm);Z (cm);N",selectPhi));
-hists2D.h_P_pos = MakeRZHist(hists3D.h_P_pos, Form("hIntDistortionP_posz_%s",tag.Data()), Form("d#phi posz @ #phi=%.3f;R (cm);Z (cm);d#phi (rad)",selectPhi));
-hists2D.h_R_pos = MakeRZHist(hists3D.h_R_pos, Form("hIntDistortionR_posz_%s",tag.Data()), Form("dR posz @ #phi=%.3f;R (cm);Z (cm);dR (cm)",selectPhi));
-hists2D.h_Z_pos = MakeRZHist(hists3D.h_Z_pos, Form("hIntDistortionZ_posz_%s",tag.Data()), Form("dz posz @ #phi=%.3f;R (cm);Z (cm);dz (cm)",selectPhi));
-hists2D.h_N_neg = MakeRZHist(hists3D.h_N_neg, Form("hentries_negz_%s",tag.Data()), Form("N negz @ #phi=%.3f;R (cm);Z (cm);N",selectPhi));
-hists2D.h_P_neg = MakeRZHist(hists3D.h_P_neg, Form("hIntDistortionP_negz_%s",tag.Data()), Form("d#phi negz @ #phi=%.3f;R (cm);Z (cm);d#phi (rad)",selectPhi));
-hists2D.h_R_neg = MakeRZHist(hists3D.h_R_neg, Form("hIntDistortionR_negz_%s",tag.Data()), Form("dR negz @ #phi=%.3f;R (cm);Z (cm);dR (cm)",selectPhi));
-hists2D.h_Z_neg = MakeRZHist(hists3D.h_Z_neg, Form("hIntDistortionZ_negz_%s",tag.Data()), Form("dz negz @ #phi=%.3f;R (cm);Z (cm);dz (cm)",selectPhi));
+hists2D.h_N_pos = MakeRPhiHist(hists3D.h_N_pos, Form("hentries_posz_%s",tag.Data()), Form("N posz @ z=%d cm;R (cm);#phi (rad);N",selectZ));
+hists2D.h_P_pos = MakeRPhiHist(hists3D.h_P_pos, Form("hIntDistortionP_posz_%s",tag.Data()), Form("d#phi posz @ z=%d cm;R (cm);#phi (rad);d#phi (rad)",selectZ));
+hists2D.h_R_pos = MakeRPhiHist(hists3D.h_R_pos, Form("hIntDistortionR_posz_%s",tag.Data()), Form("dR posz @ z=%d cm;R (cm);#phi (rad);dR (cm)",selectZ));
+hists2D.h_Z_pos = MakeRPhiHist(hists3D.h_Z_pos, Form("hIntDistortionZ_posz_%s",tag.Data()), Form("dz posz @ z=%d cm;R (cm);#phi (rad);dz (cm)",selectZ));
+hists2D.h_N_neg = MakeRPhiHist(hists3D.h_N_neg, Form("hentries_negz_%s",tag.Data()), Form("N negz @ z=%d cm;R (cm);#phi (rad);N",-selectZ));
+hists2D.h_P_neg = MakeRPhiHist(hists3D.h_P_neg, Form("hIntDistortionP_negz_%s",tag.Data()), Form("d#phi negz @ z=%d cm;R (cm);#phi (rad);d#phi (rad)",-selectZ));
+hists2D.h_R_neg = MakeRPhiHist(hists3D.h_R_neg, Form("hIntDistortionR_negz_%s",tag.Data()), Form("dR negz @ z=%d cm;R (cm);#phi (rad);dR (cm)",-selectZ));
+hists2D.h_Z_neg = MakeRPhiHist(hists3D.h_Z_neg, Form("hIntDistortionZ_negz_%s",tag.Data()), Form("dz negz @ z=%d cm;R (cm);#phi (rad);dz (cm)",-selectZ));
 
 hists2D.h_N_pos->SetDirectory(0);
 hists2D.h_P_pos->SetDirectory(0);
@@ -238,14 +216,14 @@ hists2D.h_P_neg->SetDirectory(0);
 hists2D.h_R_neg->SetDirectory(0);
 hists2D.h_Z_neg->SetDirectory(0);
 
-plot2D_Xbin(hists3D.h_N_pos, hists2D.h_N_pos, selectPhi);
-plot2D_Xbin(hists3D.h_P_pos, hists2D.h_P_pos, selectPhi);
-plot2D_Xbin(hists3D.h_R_pos, hists2D.h_R_pos, selectPhi);
-plot2D_Xbin(hists3D.h_Z_pos, hists2D.h_Z_pos, selectPhi);
-plot2D_Xbin(hists3D.h_N_neg, hists2D.h_N_neg, selectPhi);
-plot2D_Xbin(hists3D.h_P_neg, hists2D.h_P_neg, selectPhi);
-plot2D_Xbin(hists3D.h_R_neg, hists2D.h_R_neg, selectPhi);
-plot2D_Xbin(hists3D.h_Z_neg, hists2D.h_Z_neg, selectPhi);
+plot2D_Zbin(hists3D.h_N_pos, hists2D.h_N_pos, selectZ);
+plot2D_Zbin(hists3D.h_P_pos, hists2D.h_P_pos, selectZ);
+plot2D_Zbin(hists3D.h_R_pos, hists2D.h_R_pos, selectZ);
+plot2D_Zbin(hists3D.h_Z_pos, hists2D.h_Z_pos, selectZ);
+plot2D_Zbin(hists3D.h_N_neg, hists2D.h_N_neg, -selectZ);
+plot2D_Zbin(hists3D.h_P_neg, hists2D.h_P_neg, -selectZ);
+plot2D_Zbin(hists3D.h_R_neg, hists2D.h_R_neg, -selectZ);
+plot2D_Zbin(hists3D.h_Z_neg, hists2D.h_Z_neg, -selectZ);
 
 int nMaskedPos = Mask2DWithN(hists2D.h_N_pos, hists2D.h_P_pos);
 Mask2DWithN(hists2D.h_N_pos, hists2D.h_R_pos);
@@ -274,10 +252,10 @@ can->cd(7); Draw2D(hists2D.h_R_neg, hists2D.h_N_neg);
 can->cd(8); Draw2D(hists2D.h_Z_neg, hists2D.h_N_neg);
 gPad->RedrawAxis();
 can->Update();
-can->SaveAs(Form("figure/rz_NPRZ_from3D_%d_%s_%s.pdf", run, tag.Data(), phiType.Data()));
+can->SaveAs(Form("figure/rphi_NPRZ_from3D_%d_%s_Z%d.pdf", run, tag.Data(), (int)selectZ));
 delete can;
 
-TFile* outfile = new TFile(Form("Rootfiles/hist_NPRZ_2Drz_%d_%s_%s.root", run, tag.Data(), phiType.Data()), "recreate");
+TFile* outfile = new TFile(Form("Rootfiles/hist_NPRZ_2Drphi_%d_%s_Z%d.root", run, tag.Data(), (int)selectZ), "recreate");
 outfile->cd();
 hists2D.h_N_pos->Write();
 hists2D.h_P_pos->Write();

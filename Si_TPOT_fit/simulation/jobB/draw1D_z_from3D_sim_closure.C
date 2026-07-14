@@ -46,7 +46,7 @@ struct oneDHist {
 };
 
 std::pair<double,double> SetCommonYRange(const std::vector<TH1*>& histograms);
-void draw1Dmap(TString filename, TString tag, double selectR, float selectPhi, oneDHist& hists1D, int color=1, bool convert_RP_2_P=false);
+void draw1Dmap(TString filename, TString tag, double selectR, float selectPhi, oneDHist& hists1D, int color=1, bool convert_RP_2_P=false, int style=1);
 void draw1Dmap_2D(TString filename, TString tag, TH1*& h_R_pos, TH1*& h_R_neg, TH1*& h_P_pos, TH1*& h_P_neg, TH1*& h_Z_pos, TH1*& h_Z_neg, int color);
 void draw1Dmap_2D(TString filename, TString tag, double selectR, TLine*& l_R_pos, TLine*& l_R_neg, TLine*& l_P_pos, TLine*& l_P_neg, TLine*& l_Z_pos, TLine*& l_Z_neg, int color=1);
 
@@ -176,10 +176,12 @@ std::vector<float> selectRs={75, 70, 65, 60, 55, 50, 45, 40, 35, 30};
 for (const auto& selectR : selectRs)
 {
 
-oneDHist hists_MI_sim_acts, hists_MI_sim_genfit, hists_MI_sim_truth;
-draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_acts.root", run), Form("MI_sim_reco_acts"), selectR, selectPhi, hists_MI_sim_acts, 2);
-draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_genfit.root", run), Form("MI_sim_reco_genfit"), selectR, selectPhi, hists_MI_sim_genfit, 3);
-draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_truth.root", run), Form("MI_sim_reco_truth"), selectR, selectPhi, hists_MI_sim_truth, 4);
+oneDHist hists_MI_sim_acts, hists_MI_sim_genfit, hists_MI_sim_truth, hists_MI_sim_acts_truthseeding, hists_MI_sim_genfit_truthseeding;
+draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_acts.root", run), Form("MI_sim_reco_acts"), selectR, selectPhi, hists_MI_sim_acts, kRed-7);
+draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_genfit.root", run), Form("MI_sim_reco_genfit"), selectR, selectPhi, hists_MI_sim_genfit, kGreen+3);
+draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_truth.root", run), Form("MI_sim_reco_truth"), selectR, selectPhi, hists_MI_sim_truth, kAzure-2);
+draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_acts_truthseeding.root", run), Form("MI_sim_reco_acts_truthseeding"), selectR, selectPhi, hists_MI_sim_acts_truthseeding, kRed-7, true, 3);
+draw1Dmap(Form("./Rootfiles/Distortions_full_mm_%d_MI_sim_reco_genfit_truthseeding.root", run), Form("MI_sim_reco_genfit_truthseeding"), selectR, selectPhi, hists_MI_sim_genfit_truthseeding, kGreen+3, true, 3);
 
 std::vector<TH1*> hists_P; hists_P.clear();
 std::vector<TH1*> hists_R; hists_R.clear();
@@ -190,18 +192,30 @@ hists_P.push_back(hists_MI_sim_genfit.h_P_neg);
 hists_P.push_back(hists_MI_sim_genfit.h_P_pos);
 hists_P.push_back(hists_MI_sim_truth.h_P_neg);
 hists_P.push_back(hists_MI_sim_truth.h_P_pos);
+hists_P.push_back(hists_MI_sim_acts_truthseeding.h_P_neg);
+hists_P.push_back(hists_MI_sim_acts_truthseeding.h_P_pos);
+hists_P.push_back(hists_MI_sim_genfit_truthseeding.h_P_neg);
+hists_P.push_back(hists_MI_sim_genfit_truthseeding.h_P_pos);
 hists_R.push_back(hists_MI_sim_acts.h_R_neg);
 hists_R.push_back(hists_MI_sim_acts.h_R_pos);
 hists_R.push_back(hists_MI_sim_genfit.h_R_neg);
 hists_R.push_back(hists_MI_sim_genfit.h_R_pos);
 hists_R.push_back(hists_MI_sim_truth.h_R_neg);
 hists_R.push_back(hists_MI_sim_truth.h_R_pos);
+hists_R.push_back(hists_MI_sim_acts_truthseeding.h_R_neg);
+hists_R.push_back(hists_MI_sim_acts_truthseeding.h_R_pos);
+hists_R.push_back(hists_MI_sim_genfit_truthseeding.h_R_neg);
+hists_R.push_back(hists_MI_sim_genfit_truthseeding.h_R_pos);
 hists_Z.push_back(hists_MI_sim_acts.h_Z_neg);
 hists_Z.push_back(hists_MI_sim_acts.h_Z_pos);
 hists_Z.push_back(hists_MI_sim_genfit.h_Z_neg);
 hists_Z.push_back(hists_MI_sim_genfit.h_Z_pos);
 hists_Z.push_back(hists_MI_sim_truth.h_Z_neg);
 hists_Z.push_back(hists_MI_sim_truth.h_Z_pos);
+hists_Z.push_back(hists_MI_sim_acts_truthseeding.h_Z_neg);
+hists_Z.push_back(hists_MI_sim_acts_truthseeding.h_Z_pos);
+hists_Z.push_back(hists_MI_sim_genfit_truthseeding.h_Z_neg);
+hists_Z.push_back(hists_MI_sim_genfit_truthseeding.h_Z_pos);
 std::pair<double,double> yrange_P = {-0.01, 0.01}; //SetCommonYRange(hists_P);
 std::pair<double,double> yrange_R = {-0.5, 0.5}; //SetCommonYRange(hists_R);
 std::pair<double,double> yrange_Z = {-1, 1}; //SetCommonYRange(hists_Z);
@@ -256,6 +270,10 @@ hists_MI_sim_genfit.h_N_pos->Write();
 hists_MI_sim_genfit.h_N_neg->Write();
 hists_MI_sim_truth.h_N_pos->Write();
 hists_MI_sim_truth.h_N_neg->Write();
+hists_MI_sim_acts_truthseeding.h_N_pos->Write();
+hists_MI_sim_acts_truthseeding.h_N_neg->Write();
+hists_MI_sim_genfit_truthseeding.h_N_pos->Write();
+hists_MI_sim_genfit_truthseeding.h_N_neg->Write();
 ofile_N->Write();
 
 TFile* ofile_R = new TFile(Form("Rootfiles/hist_dr_1Dz_R%d_%s.root",(int)selectR,phiType.Data()),"recreate");
@@ -266,6 +284,10 @@ hists_MI_sim_genfit.h_R_pos->Write();
 hists_MI_sim_genfit.h_R_neg->Write();
 hists_MI_sim_truth.h_R_pos->Write();
 hists_MI_sim_truth.h_R_neg->Write();
+hists_MI_sim_acts_truthseeding.h_R_pos->Write();
+hists_MI_sim_acts_truthseeding.h_R_neg->Write();
+hists_MI_sim_genfit_truthseeding.h_R_pos->Write();
+hists_MI_sim_genfit_truthseeding.h_R_neg->Write();
 ofile_R->Write();
 
 TFile* ofile_P = new TFile(Form("Rootfiles/hist_dphi_1Dz_R%d_%s.root",(int)selectR,phiType.Data()),"recreate");
@@ -276,6 +298,10 @@ hists_MI_sim_genfit.h_P_pos->Write();
 hists_MI_sim_genfit.h_P_neg->Write();
 hists_MI_sim_truth.h_P_pos->Write();
 hists_MI_sim_truth.h_P_neg->Write();
+hists_MI_sim_acts_truthseeding.h_P_pos->Write();
+hists_MI_sim_acts_truthseeding.h_P_neg->Write();
+hists_MI_sim_genfit_truthseeding.h_P_pos->Write();
+hists_MI_sim_genfit_truthseeding.h_P_neg->Write();
 ofile_P->Write();
 
 TFile* ofile_Z = new TFile(Form("Rootfiles/hist_dz_1Dz_R%d_%s.root",(int)selectR,phiType.Data()),"recreate");
@@ -286,6 +312,10 @@ hists_MI_sim_genfit.h_Z_pos->Write();
 hists_MI_sim_genfit.h_Z_neg->Write();
 hists_MI_sim_truth.h_Z_pos->Write();
 hists_MI_sim_truth.h_Z_neg->Write();
+hists_MI_sim_acts_truthseeding.h_Z_pos->Write();
+hists_MI_sim_acts_truthseeding.h_Z_neg->Write();
+hists_MI_sim_genfit_truthseeding.h_Z_pos->Write();
+hists_MI_sim_genfit_truthseeding.h_Z_neg->Write();
 ofile_Z->Write();
 
 TCanvas* can = new TCanvas("can","",2400,1200);
@@ -295,11 +325,15 @@ gPad->SetLogy(1);
 hists_MI_sim_acts.h_N_pos->Draw("hist,e,same");
 hists_MI_sim_genfit.h_N_pos->Draw("hist,e,same");
 hists_MI_sim_truth.h_N_pos->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_N_pos->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_N_pos->Draw("hist,same");
 can->cd(2);
 hists_MI_sim_acts.h_P_pos->SetMinimum(-0.01); hists_MI_sim_acts.h_P_pos->SetMaximum(0.01);
 hists_MI_sim_acts.h_P_pos->Draw("hist,e,same");
 hists_MI_sim_genfit.h_P_pos->Draw("hist,e,same");
 hists_MI_sim_truth.h_P_pos->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_P_pos->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_P_pos->Draw("hist,same");
 if (l_nco_i_P) l_nco_i_P->Draw();
 if (l_nco_o_P) l_nco_o_P->Draw();
 l_nci_i_P->Draw();
@@ -310,6 +344,8 @@ hists_MI_sim_acts.h_R_pos->SetMinimum(-0.5); hists_MI_sim_acts.h_R_pos->SetMaxim
 hists_MI_sim_acts.h_R_pos->Draw("hist,e,same");
 hists_MI_sim_genfit.h_R_pos->Draw("hist,e,same");
 hists_MI_sim_truth.h_R_pos->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_R_pos->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_R_pos->Draw("hist,same");
 if (l_nco_i_R) l_nco_i_R->Draw();
 if (l_nco_o_R) l_nco_o_R->Draw();
 l_nci_i_R->Draw();
@@ -320,6 +356,8 @@ hists_MI_sim_acts.h_Z_pos->SetMinimum(-1); hists_MI_sim_acts.h_Z_pos->SetMaximum
 hists_MI_sim_acts.h_Z_pos->Draw("hist,e,same");
 hists_MI_sim_genfit.h_Z_pos->Draw("hist,e,same");
 hists_MI_sim_truth.h_Z_pos->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_Z_pos->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_Z_pos->Draw("hist,same");
 if (l_nco_i_Z) l_nco_i_Z->Draw();
 if (l_nco_o_Z) l_nco_o_Z->Draw();
 l_nci_i_Z->Draw();
@@ -329,11 +367,15 @@ gPad->SetLogy(1);
 hists_MI_sim_acts.h_N_neg->Draw("hist,e,same");
 hists_MI_sim_genfit.h_N_neg->Draw("hist,e,same");
 hists_MI_sim_truth.h_N_neg->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_N_neg->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_N_neg->Draw("hist,same");
 can->cd(6);
 hists_MI_sim_acts.h_P_neg->SetMinimum(-0.01); hists_MI_sim_acts.h_P_neg->SetMaximum(0.01);
 hists_MI_sim_acts.h_P_neg->Draw("hist,e,same");
 hists_MI_sim_genfit.h_P_neg->Draw("hist,e,same");
 hists_MI_sim_truth.h_P_neg->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_P_neg->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_P_neg->Draw("hist,same");
 if (l_sco_i_P) l_sco_i_P->Draw();
 if (l_sco_o_P) l_sco_o_P->Draw();
 l_sci_i_P->Draw();
@@ -344,6 +386,8 @@ hists_MI_sim_acts.h_R_neg->SetMinimum(-0.5); hists_MI_sim_acts.h_R_neg->SetMaxim
 hists_MI_sim_acts.h_R_neg->Draw("hist,e,same");
 hists_MI_sim_genfit.h_R_neg->Draw("hist,e,same");
 hists_MI_sim_truth.h_R_neg->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_R_neg->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_R_neg->Draw("hist,same");
 if (l_sco_i_R) l_sco_i_R->Draw();
 if (l_sco_o_R) l_sco_o_R->Draw();
 l_sci_i_R->Draw();
@@ -354,6 +398,8 @@ hists_MI_sim_acts.h_Z_neg->SetMinimum(-1); hists_MI_sim_acts.h_Z_neg->SetMaximum
 hists_MI_sim_acts.h_Z_neg->Draw("hist,e,same");
 hists_MI_sim_genfit.h_Z_neg->Draw("hist,e,same");
 hists_MI_sim_truth.h_Z_neg->Draw("hist,e,same");
+hists_MI_sim_acts_truthseeding.h_Z_neg->Draw("hist,same");
+hists_MI_sim_genfit_truthseeding.h_Z_neg->Draw("hist,same");
 if (l_sco_i_Z) l_sco_i_Z->Draw();
 if (l_sco_o_Z) l_sco_o_Z->Draw();
 l_sci_i_Z->Draw();
@@ -365,9 +411,12 @@ can->Update();
 can->SaveAs(Form("figure/resid_vsZ_from3D_atR%d_%s.pdf",(int)selectR,phiType.Data()));
 
 TLegend *legend = new TLegend(0.1, 0.1, 0.9, 0.9);
-legend->AddEntry(hists_MI_sim_acts.h_P_pos, Form("ACTS"), "F");
-legend->AddEntry(hists_MI_sim_genfit.h_P_pos, Form("GENFIT"), "F");
-legend->AddEntry(hists_MI_sim_truth.h_P_pos, Form("TRUTH"), "F");
+legend->SetHeader("MI");
+legend->AddEntry(hists_MI_sim_acts.h_P_pos, Form("RECO Seeding + ACTS Fitting"), "F");
+legend->AddEntry(hists_MI_sim_acts_truthseeding.h_P_pos, Form("TRUTH Seeding + ACTS Fitting"), "F");
+legend->AddEntry(hists_MI_sim_genfit.h_P_pos, Form("RECO Seeding + GENFIT Fitting"), "F");
+legend->AddEntry(hists_MI_sim_genfit_truthseeding.h_P_pos, Form("TRUTH Seeding + GENFIT Fitting"), "F");
+legend->AddEntry(hists_MI_sim_truth.h_P_pos, Form("TRUTH Seeding + TRUTH Fitting"), "F");
 legend->Draw();
 TCanvas* can_leg = new TCanvas("can_leg","",1600,1200);
 legend->Draw();
@@ -426,7 +475,7 @@ TH1* SubtractHistograms(const TH1* h1, const TH1* h2, const char* name = "diff")
 }
 
 void draw1Dmap(TString filename, TString tag, double selectR, float selectPhi,
-  oneDHist& hists1D, int color, bool convert_RP_2_P)
+  oneDHist& hists1D, int color, bool convert_RP_2_P, int style)
 {
   TFile* file_3D_map = new TFile(filename,"");
   if (!file_3D_map || file_3D_map->IsZombie()) {
@@ -480,14 +529,14 @@ void draw1Dmap(TString filename, TString tag, double selectR, float selectPhi,
   plot1D_Rbin(hists3D.h_P_prz_neg,hists1D.h_P_neg,selectR, selectPhi, convert_RP_2_P);
   plot1D_Rbin(hists3D.h_Z_prz_neg,hists1D.h_Z_neg,selectR, selectPhi, false);
 
-  hists1D.h_N_pos->SetLineColor(color); hists1D.h_N_pos->SetLineWidth(1); hists1D.h_N_pos->SetFillColor(0); hists1D.h_N_pos->SetMarkerColor(color);
-  hists1D.h_R_pos->SetLineColor(color); hists1D.h_R_pos->SetLineWidth(1); hists1D.h_R_pos->SetFillColor(0); hists1D.h_R_pos->SetMarkerColor(color);
-  hists1D.h_P_pos->SetLineColor(color); hists1D.h_P_pos->SetLineWidth(1); hists1D.h_P_pos->SetFillColor(0); hists1D.h_P_pos->SetMarkerColor(color);
-  hists1D.h_Z_pos->SetLineColor(color); hists1D.h_Z_pos->SetLineWidth(1); hists1D.h_Z_pos->SetFillColor(0); hists1D.h_Z_pos->SetMarkerColor(color);
-  hists1D.h_N_neg->SetLineColor(color); hists1D.h_N_neg->SetLineWidth(1); hists1D.h_N_neg->SetFillColor(0); hists1D.h_N_neg->SetMarkerColor(color);
-  hists1D.h_R_neg->SetLineColor(color); hists1D.h_R_neg->SetLineWidth(1); hists1D.h_R_neg->SetFillColor(0); hists1D.h_R_neg->SetMarkerColor(color);
-  hists1D.h_P_neg->SetLineColor(color); hists1D.h_P_neg->SetLineWidth(1); hists1D.h_P_neg->SetFillColor(0); hists1D.h_P_neg->SetMarkerColor(color);
-  hists1D.h_Z_neg->SetLineColor(color); hists1D.h_Z_neg->SetLineWidth(1); hists1D.h_Z_neg->SetFillColor(0); hists1D.h_Z_neg->SetMarkerColor(color);
+  hists1D.h_N_pos->SetLineColor(color); hists1D.h_N_pos->SetLineWidth(1); hists1D.h_N_pos->SetFillColor(0); hists1D.h_N_pos->SetMarkerColor(color); hists1D.h_N_pos->SetLineStyle(style);
+  hists1D.h_R_pos->SetLineColor(color); hists1D.h_R_pos->SetLineWidth(1); hists1D.h_R_pos->SetFillColor(0); hists1D.h_R_pos->SetMarkerColor(color); hists1D.h_R_pos->SetLineStyle(style);
+  hists1D.h_P_pos->SetLineColor(color); hists1D.h_P_pos->SetLineWidth(1); hists1D.h_P_pos->SetFillColor(0); hists1D.h_P_pos->SetMarkerColor(color); hists1D.h_P_pos->SetLineStyle(style);
+  hists1D.h_Z_pos->SetLineColor(color); hists1D.h_Z_pos->SetLineWidth(1); hists1D.h_Z_pos->SetFillColor(0); hists1D.h_Z_pos->SetMarkerColor(color); hists1D.h_Z_pos->SetLineStyle(style);
+  hists1D.h_N_neg->SetLineColor(color); hists1D.h_N_neg->SetLineWidth(1); hists1D.h_N_neg->SetFillColor(0); hists1D.h_N_neg->SetMarkerColor(color); hists1D.h_N_neg->SetLineStyle(style);
+  hists1D.h_R_neg->SetLineColor(color); hists1D.h_R_neg->SetLineWidth(1); hists1D.h_R_neg->SetFillColor(0); hists1D.h_R_neg->SetMarkerColor(color); hists1D.h_R_neg->SetLineStyle(style);
+  hists1D.h_P_neg->SetLineColor(color); hists1D.h_P_neg->SetLineWidth(1); hists1D.h_P_neg->SetFillColor(0); hists1D.h_P_neg->SetMarkerColor(color); hists1D.h_P_neg->SetLineStyle(style);
+  hists1D.h_Z_neg->SetLineColor(color); hists1D.h_Z_neg->SetLineWidth(1); hists1D.h_Z_neg->SetFillColor(0); hists1D.h_Z_neg->SetMarkerColor(color); hists1D.h_Z_neg->SetLineStyle(style);
 
   delete file_3D_map;
 

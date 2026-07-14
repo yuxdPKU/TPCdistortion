@@ -57,6 +57,10 @@ class TpcSpaceChargeMatrixContainer : public PHObject
   virtual int get_cell_index( int /*ilayerbin*/ ) const
   { return -1; }
 
+  /// get all entries
+  virtual int get_entries() const
+  { return 0; }
+
   /// get entries for a given cell
   virtual int get_entries( int /*cell_index*/ ) const
   { return 0; }

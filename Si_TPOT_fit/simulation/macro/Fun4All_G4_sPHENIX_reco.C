@@ -385,7 +385,7 @@ int Fun4All_G4_sPHENIX_reco(
       actsFit_SiTpotFit->fitSiliconMMs(G4TRACKING::SC_CALIBMODE);
       actsFit_SiTpotFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
       actsFit_SiTpotFit->set_svtx_seed_map_name("PrunedSvtxTrackSeedContainer");
-      actsFit_SiTpotFit->set_pp_mode(TRACKING::pp_mode);
+      actsFit_SiTpotFit->set_pp_mode(TRACKING::streaming_mode);
       actsFit_SiTpotFit->set_use_clustermover(true);  // default is true for now
       actsFit_SiTpotFit->useActsEvaluator(false);
       actsFit_SiTpotFit->useOutlierFinder(false);
@@ -441,7 +441,6 @@ int Fun4All_G4_sPHENIX_reco(
     residuals->setGridDimensions(36, 16, 80);
     se->registerSubsystem(residuals);
   }
-
 
   Enable::QA = false;
   if (Enable::QA)
