@@ -41,34 +41,28 @@ Rank=CPU_Speed
 Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Si_TPOT_fit/simulation
 
 # The executable we want to run.
-Executable     = $(Initialdir)/macro/run_sim_reco.sh
+Executable     = $(Initialdir)/macro/run_sim.sh
 
-RunNumber      = 29
-Nevent         = 1000
-NJob           = 1000
+Nevent    = 1000
+NJob      = 1000
 
 Segment        = $(Process)
-DstFileName    = G4Hits_pythia8_Detroit-$INT(RunNumber,%010d)-$INT(Segment,%06d).root
-OutDir         = $(Initialdir)/root/
-OutPrefix      = MI_sim_reco_genfit_truthseeding_includesecondaries
-DoTruthSeeding = true
-DoTruthFitting = false
-FitMode        = genfit
-Index          = 0
-StepSize       = 0
+OutDir         = /sphenix/u/xyu3/hftg01/DST_FOR_DISTORTION/SimulationDST_constBField/
+OutFileName    = G4Hits-$INT(Segment,%05d).root
+OutFile        = $(OutDir)/$(OutFileName)
 
 # The argument to pass to the executable.
 #tracking firt then calo, only one tracking file
-Arguments      = "$(Nevent) $(DstFileName) $(OutDir) $(OutPrefix) $(DoTruthSeeding) $(DoTruthFitting) $(FitMode) $(Index) $(StepSize)"
+Arguments      = "$(Nevent) $(OutFile)"
 
 # The job's stdout is sent to this file.
-Output         = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).out
+Output         = $(Initialdir)/log/job-Sim-$(Process).out
 
 # The job's stderr is sent to this file.
-Error          = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).err
+Error          = $(Initialdir)/log/job-Sim-$(Process).err
 
 # The condor log file for this job, useful when debugging.
-Log            = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).log
+Log            = $(Initialdir)/log/job-Sim-$(Process).log
 
 #should_transfer_files   = YES
 #when_to_transfer_output = ON_EXIT_OR_EVICT

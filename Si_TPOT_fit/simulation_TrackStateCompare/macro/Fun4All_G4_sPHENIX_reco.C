@@ -42,10 +42,13 @@
 #include <Trkr_Clustering.C>
 #include <Trkr_Reco.C>
 
+#include <trackstatecomparator/TrackStateComparator.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 //R__LOAD_LIBRARY(libg4eval_hp.so)
 R__LOAD_LIBRARY(libtpccalib.so)
 R__LOAD_LIBRARY(libtrack_reco.so)
+R__LOAD_LIBRARY(libTrackStateComparator.so)
 
 namespace RecoFitMode
 {
@@ -114,7 +117,6 @@ int Fun4All_G4_sPHENIX_reco(
     const std::string outdir = "root/",
     const std::string outfilename = "",
     const bool doTruthSeeding = true,
-    const bool doTruthFitting = false,
     const std::string fitMode = "acts",
     const int index = 0,
     const int stepsize = 10)
@@ -142,8 +144,6 @@ int Fun4All_G4_sPHENIX_reco(
             << (useActsFit ? "actsfit" : "genfit") << std::endl;
   std::cout << "Fun4All_G4_sPHENIX_reco - do track seeding use truth information: "
             << doTruthSeeding << std::endl;
-  std::cout << "Fun4All_G4_sPHENIX_reco - do track fitting use truth information: "
-            << doTruthFitting << std::endl;
 
   // options
   Enable::PIPE = true;
@@ -186,7 +186,7 @@ int Fun4All_G4_sPHENIX_reco(
 
   // distortion reconstruction
   G4TRACKING::SC_CALIBMODE = true;
-  G4TRACKING::SC_USE_MICROMEGAS = true;
+  G4TRACKING::SC_USE_MICROMEGAS = false;
 
   std::cout<< "Fun4All_CombinedDataReconstruction - tpc_drift_velocity_sim: " << G4TPC::tpc_drift_velocity_sim << std::endl;
   std::cout<< "Fun4All_CombinedDataReconstruction - tpc_drift_velocity_reco: " << G4TPC::tpc_drift_velocity_reco << std::endl;
@@ -330,118 +330,90 @@ int Fun4All_G4_sPHENIX_reco(
   //cluster delta z correction
   se->registerSubsystem(new PHTpcDeltaZCorrection);
 
-  if (doTruthFitting)
+  //truth track fitter
+  auto truth_trackfitter = new PHTruthTrackFitter;
+  truth_trackfitter->setTrackMapName("track_map_truth");
+  se->registerSubsystem(truth_trackfitter);
+
+  if (useActsFit)
   {
-    //truth track fitter
-    auto truth_trackfitter = new PHTruthTrackFitter;
-    truth_trackfitter->setTrackMapName("SvtxSiliconMMTrackMap");
-    se->registerSubsystem(truth_trackfitter);
+    std::cout<<"Using ACTS fit"<<std::endl;
+    // perform final track fit with ACTS
+    auto actsFit = new PHActsTrkFitter;
+    actsFit->Verbosity(0);
+    actsFit->commissioning(G4TRACKING::use_alignment);
+
+    // Full detector fit. This writes to SvtxTrackMap, which is consumed by
+    // PHTrackCleaner and PHTrackPruner below.
+    actsFit->fitSiliconMMs(false);
+    actsFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
+
+    actsFit->set_use_clustermover(true);
+    actsFit->useActsEvaluator(false);
+    actsFit->useOutlierFinder(false);
+    actsFit->setFieldMap(G4MAGNET::magfield_tracking);
+    se->registerSubsystem(actsFit);
+
+    auto cleaner = new PHTrackCleaner();
+    cleaner->Verbosity(0);
+    se->registerSubsystem(cleaner);
+
+    //prune acts full tracks, create new SvtxTrackMap
+    auto trackpruner = new PHTrackPruner;
+    trackpruner->Verbosity(0);
+    trackpruner->set_svtx_track_map_name("SvtxTrackMap");
+    trackpruner->set_pruned_svtx_seed_map_name("seed_map_acts_pruned");
+    trackpruner->set_track_pt_low_cut(0.2);
+    trackpruner->set_track_quality_high_cut(100);
+    trackpruner->set_nmvtx_clus_low_cut(3);
+    trackpruner->set_nintt_clus_low_cut(2);
+    trackpruner->set_ntpc_clus_low_cut(35);
+    trackpruner->set_ntpot_clus_low_cut(0);
+    trackpruner->set_nmvtx_states_low_cut(3);
+    trackpruner->set_nintt_states_low_cut(2);
+    trackpruner->set_ntpc_states_low_cut(35);
+    trackpruner->set_ntpot_states_low_cut(0);
+    se->registerSubsystem(trackpruner);
+
+    // perform final track fit with ACTS
+    // Si-TPOT fit
+    auto actsFit_SiTpotFit = new PHActsTrkFitter;
+    actsFit_SiTpotFit->Verbosity(0);
+    actsFit_SiTpotFit->commissioning(G4TRACKING::use_alignment);
+    // in calibration mode, fit only Silicons and Micromegas hits
+    actsFit_SiTpotFit->fitSiliconMMs(G4TRACKING::SC_CALIBMODE);
+    actsFit_SiTpotFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
+    actsFit_SiTpotFit->set_svtx_seed_map_name("seed_map_acts_pruned");
+    actsFit_SiTpotFit->set_pp_mode(TRACKING::streaming_mode);
+    actsFit_SiTpotFit->set_use_clustermover(true);  // default is true for now
+    actsFit_SiTpotFit->useActsEvaluator(false);
+    actsFit_SiTpotFit->useOutlierFinder(false);
+    actsFit_SiTpotFit->setFieldMap(G4MAGNET::magfield_tracking);
+    se->registerSubsystem(actsFit_SiTpotFit);
+
   }
   else
   {
-    if (useActsFit)
-    {
-      std::cout<<"Using ACTS fit"<<std::endl;
-      // perform final track fit with ACTS
-      auto actsFit = new PHActsTrkFitter;
-      actsFit->Verbosity(0);
-      actsFit->commissioning(G4TRACKING::use_alignment);
 
-      // fit with Micromegas and Silicon ONLY
-      actsFit->fitSiliconMMs(G4TRACKING::SC_CALIBMODE);
-      actsFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
+    std::cout<<"Using Genfit"<<std::endl;
+    // perform final track fit with GENFIT
+    auto genfitFit = new PHGenFitTrkFitter;
+    genfitFit->set_fit_silicon_mms(G4TRACKING::SC_CALIBMODE);
+    genfitFit->set_use_micromegas(G4TRACKING::SC_USE_MICROMEGAS);
+    genfitFit->set_svtx_track_map_name("SvtxSiliconMMTrackMap");
+    genfitFit->set_fit_min_pT(0.2);
+    se->registerSubsystem(genfitFit);
 
-      actsFit->set_use_clustermover(true);
-      actsFit->useActsEvaluator(false);
-      actsFit->useOutlierFinder(false);
-      actsFit->setFieldMap(G4MAGNET::magfield_tracking);
-      se->registerSubsystem(actsFit);
-
-      auto cleaner = new PHTrackCleaner();
-      cleaner->Verbosity(0);
-      se->registerSubsystem(cleaner);
-
-      //prune acts full tracks, create new SvtxTrackMap
-      auto trackpruner = new PHTrackPruner;
-      trackpruner->Verbosity(0);
-      trackpruner->set_pruned_svtx_seed_map_name("PrunedSvtxTrackSeedContainer");
-      trackpruner->set_track_pt_low_cut(0.5);
-      trackpruner->set_track_quality_high_cut(100);
-      trackpruner->set_nmvtx_clus_low_cut(3);
-      trackpruner->set_nintt_clus_low_cut(2);
-      trackpruner->set_ntpc_clus_low_cut(35);
-      trackpruner->set_ntpot_clus_low_cut(1);
-      trackpruner->set_nmvtx_states_low_cut(3);
-      trackpruner->set_nintt_states_low_cut(2);
-      trackpruner->set_ntpc_states_low_cut(35);
-      trackpruner->set_ntpot_states_low_cut(1);
-      se->registerSubsystem(trackpruner);
-
-      // perform final track fit with ACTS
-      // Si-TPOT fit
-      auto actsFit_SiTpotFit = new PHActsTrkFitter;
-      actsFit_SiTpotFit->Verbosity(0);
-      actsFit_SiTpotFit->commissioning(G4TRACKING::use_alignment);
-      // in calibration mode, fit only Silicons and Micromegas hits
-      actsFit_SiTpotFit->fitSiliconMMs(G4TRACKING::SC_CALIBMODE);
-      actsFit_SiTpotFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
-      actsFit_SiTpotFit->set_svtx_seed_map_name("PrunedSvtxTrackSeedContainer");
-      actsFit_SiTpotFit->set_pp_mode(TRACKING::streaming_mode);
-      actsFit_SiTpotFit->set_use_clustermover(true);  // default is true for now
-      actsFit_SiTpotFit->useActsEvaluator(false);
-      actsFit_SiTpotFit->useOutlierFinder(false);
-      actsFit_SiTpotFit->setFieldMap(G4MAGNET::magfield_tracking);
-      se->registerSubsystem(actsFit_SiTpotFit);
-
-    }
-    else
-    {
-
-      std::cout<<"Using Genfit"<<std::endl;
-      // perform final track fit with GENFIT
-      auto genfitFit = new PHGenFitTrkFitter;
-      genfitFit->set_fit_silicon_mms(G4TRACKING::SC_CALIBMODE);
-      genfitFit->set_svtx_track_map_name("SvtxSiliconMMTrackMap");
-      se->registerSubsystem(genfitFit);
-
-    }
   }
 
-  if (G4TRACKING::SC_CALIBMODE)
-  {
-    /*
-    * in calibration mode, calculate residuals between TPC and fitted tracks,
-    * store in dedicated structure for distortion correction
-    */
-    auto residuals = new PHTpcResiduals;
-    const TString tpc_residoutfile = theOutfile + "_PhTpcResiduals.root";
-    tpcresidstring = tpc_residoutfile.Data();
-    residuals->setOutputfile(tpc_residoutfile.Data());
-    residuals->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
-    residuals->disableAverageCorr();
-
-    // matches Tony's analysis
-    residuals->setMinPt( 0.5 );
-    residuals->requireCrossing(false);
-    residuals->requireCM(true);
-    residuals->setPCAzcut(10);
-    residuals->setEtacut(0.25);
-
-    residuals->setMaxTrackAlpha(0.6);
-    residuals->setMaxTrackBeta(1.5);
-    residuals->setMaxTrackResidualDrphi(2);
-    residuals->setMaxTrackResidualDz(5);
-
-    residuals->setMinRPhiErr(0.005);
-    residuals->setMinZErr(0.01);
-
-    // reconstructed distortion grid size (layer)
-    residuals->setGridDimensions(48);
-
-    // reconstructed distortion grid size (phi, r, z)
-    residuals->setGridDimensions(36, 16, 80);
-    se->registerSubsystem(residuals);
-  }
+  auto trackstatecompare = new TrackStateComparator;
+  trackstatecompare->Verbosity(1);
+  const TString tpc_residoutfile = theOutfile + "_PhTpcResiduals.root";
+  tpcresidstring = tpc_residoutfile.Data();
+  trackstatecompare->set_output_file(tpc_residoutfile.Data());
+  trackstatecompare->set_truth_track_map_name("track_map_truth");
+  trackstatecompare->set_reco_track_map_name("SvtxSiliconMMTrackMap");
+  se->registerSubsystem(trackstatecompare);
 
   Enable::QA = false;
   if (Enable::QA)

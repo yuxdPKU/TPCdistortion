@@ -109,8 +109,8 @@ namespace RecoFitMode
 //____________________________________________________________________
 int Fun4All_G4_sPHENIX_reco(
     const int nEvents = 10,
-    const std::string inputFile = "G4Hits_pythia8_Detroit-0000000029-000000.root",
-    //const std::string inputFile = "~/hftg01/DST_FOR_DISTORTION/SimulationDST/G4Hits-00000.root",
+    //const std::string inputFile = "G4Hits_pythia8_Detroit-0000000029-000000.root",
+    const std::string inputFile = "/direct/sphenix+tg+tg01/hf/xyu3/DST_FOR_DISTORTION/SimulationDST_chargedgeantino/G4Hits-00001.root",
     const std::string outdir = "root/",
     const std::string outfilename = "",
     const bool doTruthSeeding = true,
@@ -197,7 +197,16 @@ int Fun4All_G4_sPHENIX_reco(
   int segment = runseg.second;
   std::cout<<"runnumber = "<<runnumber<<" , segment = "<<segment<<std::endl;
 
-  RunSettings(runnumber);
+  if (runnumber==0)
+  {
+    Input::BEAM_CONFIGURATION = Input::pp_COLLISION;
+    Enable::MVTX_APPLYMISALIGNMENT = true;
+    TRACKING::streaming_mode = true;
+  }
+  else
+  {
+    RunSettings(runnumber);
+  }
   const std::string outputBase = resolvedOutfilename + "_" + std::to_string(runnumber) + "-" + std::to_string(segment) + ".root";
   const std::string outDir = outdir + "/inReconstruction/" + std::to_string(runnumber) + "/";
   const std::string outputDirMove = outdir + "/Reconstructed/" + std::to_string(runnumber) + "/";
@@ -229,6 +238,9 @@ int Fun4All_G4_sPHENIX_reco(
   Enable::CDB = true;
   rc->set_StringFlag("CDB_GLOBALTAG",CDB::global_tag);
   rc->set_uint64Flag("TIMESTAMP",CDB::timestamp);
+
+  // use empty acts material map
+  ACTSGEOM::useActsMaterialMap = false;
 
   Input::READHITS = true;
   if (!Input::READHITS)
