@@ -109,6 +109,65 @@ namespace RecoFitMode
   }
 }
 
+namespace ActsFitConfiguration
+{
+  bool resolve_extrapolation_mode(
+      const std::string& requested_mode,
+      PHActsTrkFitter::ExtrapolationMode& resolved_mode)
+  {
+    const std::string mode = RecoFitMode::normalize(requested_mode);
+    if (mode == "default")
+    {
+      resolved_mode = PHActsTrkFitter::ExtrapolationMode::Default;
+      return true;
+    }
+    if (mode == "forward")
+    {
+      resolved_mode = PHActsTrkFitter::ExtrapolationMode::Forward;
+      return true;
+    }
+    if (mode == "backward")
+    {
+      resolved_mode = PHActsTrkFitter::ExtrapolationMode::Backward;
+      return true;
+    }
+    if (mode == "bidirectional")
+    {
+      resolved_mode = PHActsTrkFitter::ExtrapolationMode::Bidirectional;
+      return true;
+    }
+    return false;
+  }
+
+  bool resolve_cluster_error_mode(
+      const std::string& requested_mode,
+      PHActsTrkFitter::ClusterErrorMode& resolved_mode)
+  {
+    const std::string mode = RecoFitMode::normalize(requested_mode);
+    if (mode == "auto")
+    {
+      resolved_mode = PHActsTrkFitter::ClusterErrorMode::Auto;
+      return true;
+    }
+    if (mode == "raw")
+    {
+      resolved_mode = PHActsTrkFitter::ClusterErrorMode::Raw;
+      return true;
+    }
+    if (mode == "simulation" || mode == "sim" || mode == "mc")
+    {
+      resolved_mode = PHActsTrkFitter::ClusterErrorMode::Simulation;
+      return true;
+    }
+    if (mode == "data")
+    {
+      resolved_mode = PHActsTrkFitter::ClusterErrorMode::Data;
+      return true;
+    }
+    return false;
+  }
+}
+
 //____________________________________________________________________
 int Fun4All_G4_sPHENIX_reco(
     const int nEvents = 10,
@@ -118,6 +177,8 @@ int Fun4All_G4_sPHENIX_reco(
     const std::string outfilename = "",
     const bool doTruthSeeding = true,
     const std::string fitMode = "acts",
+    const std::string extrapolationMode = "default",
+    const std::string clusterErrorMode = "raw",
     const int index = 0,
     const int stepsize = 10)
 {
@@ -132,6 +193,33 @@ int Fun4All_G4_sPHENIX_reco(
               << " (expected auto, acts, actsfit, genfit, or gen)" << std::endl;
     return 1;
   }
+
+  PHActsTrkFitter::ExtrapolationMode resolvedExtrapolationMode =
+      PHActsTrkFitter::ExtrapolationMode::Default;
+  PHActsTrkFitter::ClusterErrorMode resolvedClusterErrorMode =
+      PHActsTrkFitter::ClusterErrorMode::Raw;
+  if (useActsFit &&
+      !ActsFitConfiguration::resolve_extrapolation_mode(
+          extrapolationMode,
+          resolvedExtrapolationMode))
+  {
+    std::cout << "Fun4All_G4_sPHENIX_reco - invalid extrapolationMode: "
+              << extrapolationMode
+              << " (expected default, forward, backward, or bidirectional)"
+              << std::endl;
+    return 1;
+  }
+  if (useActsFit &&
+      !ActsFitConfiguration::resolve_cluster_error_mode(
+          clusterErrorMode,
+          resolvedClusterErrorMode))
+  {
+    std::cout << "Fun4All_G4_sPHENIX_reco - invalid clusterErrorMode: "
+              << clusterErrorMode
+              << " (expected auto, raw, simulation, sim, mc, or data)"
+              << std::endl;
+    return 1;
+  }
   const std::string resolvedOutfilename = !outfilename.empty() ?
       outfilename :
       (useActsFit ? "dst_sim_acts" : "dst_sim_genfit");
@@ -142,6 +230,13 @@ int Fun4All_G4_sPHENIX_reco(
   std::cout << "Fun4All_G4_sPHENIX_reco - output prefix: " << resolvedOutfilename << std::endl;
   std::cout << "Fun4All_G4_sPHENIX_reco - fit mode: "
             << (useActsFit ? "actsfit" : "genfit") << std::endl;
+  if (useActsFit)
+  {
+    std::cout << "Fun4All_G4_sPHENIX_reco - ACTS extrapolation mode: "
+              << extrapolationMode << std::endl;
+    std::cout << "Fun4All_G4_sPHENIX_reco - ACTS cluster error mode: "
+              << clusterErrorMode << std::endl;
+  }
   std::cout << "Fun4All_G4_sPHENIX_reco - do track seeding use truth information: "
             << doTruthSeeding << std::endl;
 
@@ -185,8 +280,8 @@ int Fun4All_G4_sPHENIX_reco(
   // G4TPC::correction_filename = "/phenix/u/hpereira/sphenix/work/g4simulations/distortion_maps/average_minus_static_distortion_inverted_10.root";
 
   // distortion reconstruction
-  G4TRACKING::SC_CALIBMODE = true;
-  G4TRACKING::SC_USE_MICROMEGAS = false;
+  G4TRACKING::SC_CALIBMODE = false;
+  G4TRACKING::SC_USE_MICROMEGAS = true;
 
   std::cout<< "Fun4All_CombinedDataReconstruction - tpc_drift_velocity_sim: " << G4TPC::tpc_drift_velocity_sim << std::endl;
   std::cout<< "Fun4All_CombinedDataReconstruction - tpc_drift_velocity_reco: " << G4TPC::tpc_drift_velocity_reco << std::endl;
@@ -223,6 +318,8 @@ int Fun4All_G4_sPHENIX_reco(
   // make sure to printout random seeds for reproducibility
   PHRandomSeed::Verbosity(1);
 
+  const int randomSeed = 100000 + segment;
+  rc->set_IntFlag("RANDOMSEED", randomSeed);
   // rc->set_IntFlag("RANDOMSEED",1);
 
   // condition database
@@ -341,12 +438,14 @@ int Fun4All_G4_sPHENIX_reco(
     // perform final track fit with ACTS
     auto actsFit = new PHActsTrkFitter;
     actsFit->Verbosity(0);
+    actsFit->setExtrapolationMode(resolvedExtrapolationMode);
+    actsFit->setClusterErrorMode(resolvedClusterErrorMode);
     actsFit->commissioning(G4TRACKING::use_alignment);
 
     // Full detector fit. This writes to SvtxTrackMap, which is consumed by
     // PHTrackCleaner and PHTrackPruner below.
     actsFit->fitSiliconMMs(false);
-    actsFit->setUseMicromegas(G4TRACKING::SC_USE_MICROMEGAS);
+    actsFit->setUseMicromegas(true);
 
     actsFit->set_use_clustermover(true);
     actsFit->useActsEvaluator(false);
@@ -358,6 +457,7 @@ int Fun4All_G4_sPHENIX_reco(
     cleaner->Verbosity(0);
     se->registerSubsystem(cleaner);
 
+    /*
     //prune acts full tracks, create new SvtxTrackMap
     auto trackpruner = new PHTrackPruner;
     trackpruner->Verbosity(0);
@@ -379,6 +479,8 @@ int Fun4All_G4_sPHENIX_reco(
     // Si-TPOT fit
     auto actsFit_SiTpotFit = new PHActsTrkFitter;
     actsFit_SiTpotFit->Verbosity(0);
+    actsFit_SiTpotFit->setExtrapolationMode(resolvedExtrapolationMode);
+    actsFit_SiTpotFit->setClusterErrorMode(resolvedClusterErrorMode);
     actsFit_SiTpotFit->commissioning(G4TRACKING::use_alignment);
     // in calibration mode, fit only Silicons and Micromegas hits
     actsFit_SiTpotFit->fitSiliconMMs(G4TRACKING::SC_CALIBMODE);
@@ -390,6 +492,7 @@ int Fun4All_G4_sPHENIX_reco(
     actsFit_SiTpotFit->useOutlierFinder(false);
     actsFit_SiTpotFit->setFieldMap(G4MAGNET::magfield_tracking);
     se->registerSubsystem(actsFit_SiTpotFit);
+    */
 
   }
   else
@@ -398,21 +501,50 @@ int Fun4All_G4_sPHENIX_reco(
     std::cout<<"Using Genfit"<<std::endl;
     // perform final track fit with GENFIT
     auto genfitFit = new PHGenFitTrkFitter;
-    genfitFit->set_fit_silicon_mms(G4TRACKING::SC_CALIBMODE);
-    genfitFit->set_use_micromegas(G4TRACKING::SC_USE_MICROMEGAS);
-    genfitFit->set_svtx_track_map_name("SvtxSiliconMMTrackMap");
-    genfitFit->set_fit_min_pT(0.2);
+    genfitFit->set_fit_silicon_mms(false);
+    genfitFit->set_use_micromegas(true);
     se->registerSubsystem(genfitFit);
 
+    auto cleaner = new PHTrackCleaner();
+    cleaner->Verbosity(0);
+    se->registerSubsystem(cleaner);
+
+    /*
+    //prune acts full tracks, create new SvtxTrackMap
+    auto trackpruner = new PHTrackPruner;
+    trackpruner->Verbosity(0);
+    trackpruner->set_svtx_track_map_name("SvtxTrackMap");
+    trackpruner->set_pruned_svtx_seed_map_name("seed_map_acts_pruned");
+    trackpruner->set_track_pt_low_cut(0.2);
+    trackpruner->set_track_quality_high_cut(100);
+    trackpruner->set_nmvtx_clus_low_cut(3);
+    trackpruner->set_nintt_clus_low_cut(2);
+    trackpruner->set_ntpc_clus_low_cut(35);
+    trackpruner->set_ntpot_clus_low_cut(0);
+    trackpruner->set_nmvtx_states_low_cut(3);
+    trackpruner->set_nintt_states_low_cut(2);
+    trackpruner->set_ntpc_states_low_cut(35);
+    trackpruner->set_ntpot_states_low_cut(0);
+    se->registerSubsystem(trackpruner);
+
+    // perform final track fit with GENFIT
+    auto genfitFit_SiTpotFit = new PHGenFitTrkFitter;
+    genfitFit_SiTpotFit->set_fit_silicon_mms(G4TRACKING::SC_CALIBMODE);
+    genfitFit_SiTpotFit->set_use_micromegas(G4TRACKING::SC_USE_MICROMEGAS);
+    genfitFit_SiTpotFit->set_svtx_track_map_name("SvtxSiliconMMTrackMap");
+    genfitFit_SiTpotFit->set_svtx_seed_map_name("seed_map_acts_pruned");
+    se->registerSubsystem(genfitFit_SiTpotFit);
+    */
   }
 
   auto trackstatecompare = new TrackStateComparator;
-  trackstatecompare->Verbosity(1);
+  trackstatecompare->Verbosity(0);
   const TString tpc_residoutfile = theOutfile + "_PhTpcResiduals.root";
   tpcresidstring = tpc_residoutfile.Data();
   trackstatecompare->set_output_file(tpc_residoutfile.Data());
   trackstatecompare->set_truth_track_map_name("track_map_truth");
-  trackstatecompare->set_reco_track_map_name("SvtxSiliconMMTrackMap");
+  //trackstatecompare->set_reco_track_map_name("SvtxSiliconMMTrackMap");
+  trackstatecompare->set_reco_track_map_name("SvtxTrackMap");
   se->registerSubsystem(trackstatecompare);
 
   Enable::QA = false;

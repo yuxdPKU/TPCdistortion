@@ -45,20 +45,26 @@ Executable     = $(Initialdir)/macro/run_sim_reco.sh
 
 RunNumber      = 29
 Nevent         = 1000
-NJob           = 1000
+NJob           = 100
 
 Segment        = $(Process)
 DstFileName    = G4Hits_pythia8_Detroit-$INT(RunNumber,%010d)-$INT(Segment,%06d).root
 OutDir         = $(Initialdir)/root/
-OutPrefix      = sim_reco_genfit_includesecondaries_fullphi_minpt0p2
 DoTruthSeeding = true
 FitMode        = genfit
+#ExtrapolationMode = default
+#ExtrapolationMode = forward
+#ExtrapolationMode = backward
+ExtrapolationMode = bidirectional
+ClusterErrorMode  = raw
+#ClusterErrorMode  = sim
+OutPrefix      = sim_reco_FIT$(FitMode)_tpcinfit
 Index          = 0
 StepSize       = 0
 
 # The argument to pass to the executable.
 #tracking firt then calo, only one tracking file
-Arguments      = "$(Nevent) $(DstFileName) $(OutDir) $(OutPrefix) $(DoTruthSeeding) $(FitMode) $(Index) $(StepSize)"
+Arguments      = "$(Nevent) $(DstFileName) $(OutDir) $(OutPrefix) $(DoTruthSeeding) $(FitMode) $(ExtrapolationMode) $(ClusterErrorMode) $(Index) $(StepSize)"
 
 # The job's stdout is sent to this file.
 Output         = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).out
@@ -67,7 +73,8 @@ Output         = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(In
 Error          = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).err
 
 # The condor log file for this job, useful when debugging.
-Log            = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).log
+#Log            = $(Initialdir)/log/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).log
+Log            = /tmp/job-$(OutPrefix)-$(RunNumber).$(Segment).$(Index).$(Cluster).$(Process).log
 
 #should_transfer_files   = YES
 #when_to_transfer_output = ON_EXIT_OR_EVICT

@@ -4,8 +4,24 @@ runs=( 29 )
 #types=( 'MI_sim_reco_acts_truthseeding' 'MI_sim_reco_genfit_truthseeding' )
 #types=( 'MI_sim_reco_truth_extrapolate' )
 #types=( 'MI_sim_reco_acts_truthseeding_includesecondaries' 'MI_sim_reco_genfit_truthseeding_includesecondaries' )
-runs=( 0 )
-types=( 'MI_sim_reco_acts_truthseeding_includesecondaries_constBField' 'MI_sim_reco_genfit_truthseeding_includesecondaries_constBField' 'MI_sim_reco_truth_extrapolate_constBField' )
+types=(
+	#'MI_sim_reco_FITacts_EXTRAdefault_CLUSERRraw_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAforward_CLUSERRraw_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAbackward_CLUSERRraw_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAbidirectional_CLUSERRraw_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAbidirectional_CLUSERRsim_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAbidirectional_CLUSERRraw_DISTORTIONINPUTtrue'
+	#'MI_sim_reco_FITgenfit_DISTORTIONINPUTtrue'
+	#'MI_sim_reco_FITgenfit_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITtruth_DISTORTIONINPUTtrue'
+	#'MI_sim_reco_FITtruth_DISTORTIONINPUTfalse'
+	#'MI_sim_reco_FITacts_EXTRAbidirectional_CLUSERRraw_DISTORTIONINPUTfalse_nominalSeeding'
+	#'MI_sim_reco_FITacts_EXTRAbidirectional_CLUSERRraw_DISTORTIONINPUTtrue_nominalSeeding'
+	'MI_sim_reco_FITgenfit_DISTORTIONINPUTfalse_nominalSeeding'
+	'MI_sim_reco_FITgenfit_DISTORTIONINPUTtrue_nominalSeeding'
+)
+#runs=( 0 )
+#types=( 'MI_sim_reco_acts_truthseeding_includesecondaries_constBField' 'MI_sim_reco_genfit_truthseeding_includesecondaries_constBField' 'MI_sim_reco_truth_extrapolate_constBField' )
 echo ${#runs[@]}
 echo ${#types[@]}
 for ((k=0; k<${#runs[@]}; k++))

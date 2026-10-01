@@ -43,14 +43,15 @@ Initialdir     = /sphenix/u/xyu3/workarea/TPCdistortion/Si_TPOT_fit/simulation_m
 # The executable we want to run.
 Executable     = $(Initialdir)/macro/run_sim_reco.sh
 
-RunNumber      = 29
+RunNumber      = 0
 Nevent         = 1000
 NJob           = 1000
 
 Segment        = $(Process)
-DstFileName    = G4Hits_pythia8_Detroit-$INT(RunNumber,%010d)-$INT(Segment,%06d).root
+#DstFileName    = G4Hits_pythia8_Detroit-$INT(RunNumber,%010d)-$INT(Segment,%06d).root
+DstFileName    = /direct/sphenix+tg+tg01/hf/xyu3/DST_FOR_DISTORTION/SimulationDST_chargedgeantino/G4Hits-$INT(Segment,%05d).root
 OutDir         = $(Initialdir)/root/
-OutPrefix      = MI_sim_reco_acts_truthseeding_includesecondaries
+OutPrefix      = MI_sim_reco_acts_truthseeding_includesecondaries_chargedgeantino_emptymm
 DoTruthSeeding = true
 DoTruthFitting = false
 FitMode        = acts

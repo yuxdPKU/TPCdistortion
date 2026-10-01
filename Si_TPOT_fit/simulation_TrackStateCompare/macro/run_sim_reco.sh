@@ -33,8 +33,10 @@ OutDir=$3
 OutPrefix=$4
 DoTruthSeeding=${5:-false}
 FitMode=${6:-auto}
-Index=$7
-StepSize=$8
+ExtrapolationMode=$7
+ClusterErrorMode=$8
+Index=$9
+StepSize=${10}
 
 getinputfiles.pl "$InDst"
 #getinputfiles.pl --filelist $InDstList
@@ -42,5 +44,5 @@ getinputfiles.pl "$InDst"
 # print the environment - needed for debugging
 printenv
 
-root.exe -q -b Fun4All_G4_sPHENIX_reco.C\($nEvents,\"${InDst}\",\"${OutDir}\",\"${OutPrefix}\",${DoTruthSeeding},\"${FitMode}\",$Index,$StepSize\)
+root.exe -q -b Fun4All_G4_sPHENIX_reco.C\($nEvents,\"${InDst}\",\"${OutDir}\",\"${OutPrefix}\",${DoTruthSeeding},\"${FitMode}\",\"${ExtrapolationMode}\",\"${ClusterErrorMode}\",$Index,$StepSize\)
 echo Script done

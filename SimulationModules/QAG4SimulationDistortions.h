@@ -41,6 +41,12 @@ class QAG4SimulationDistortions : public SubsysReco
     m_trackmapname = value;
   }
 
+  //! cluster map name
+  void set_clustermap_name(const std::string &value)
+  {
+    m_clustermapname = value;
+  }
+
   void disableModuleEdgeCorr() { m_disable_module_edge_corr = true; }
   void disableStaticCorr() { m_disable_static_corr = true; }
   void disableAverageCorr() { m_disable_average_corr = true; }
@@ -66,6 +72,9 @@ class QAG4SimulationDistortions : public SubsysReco
  private:
   //! track map name
   std::string m_trackmapname = "SvtxSiliconMMTrackMap";
+
+  //! cluster name
+  std::string m_clustermapname = "TRKR_CLUSTER";
 
   std::string get_histo_prefix()
   {

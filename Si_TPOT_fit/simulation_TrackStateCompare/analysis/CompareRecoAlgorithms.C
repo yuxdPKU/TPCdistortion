@@ -73,11 +73,11 @@ namespace
 }  // namespace
 
 void CompareRecoAlgorithms(
-    const char* actsFileName = "hist_acts_includesecondaries_fullphi_minpt0p2.root",
-    const char* genfitFileName = "hist_genfit_includesecondaries_fullphi_minpt0p2.root",
+    const char* actsFileName = "hist_FITacts_EXTRAbidirectional_CLUSERRraw.root",
+    const char* genfitFileName = "hist_FITgenfit.root",
     const char* outputFileName = "hist_reco_comparison.root",
     const char* figureDirectory = "figure_compare",
-    bool normalize = true)
+    bool normalize = false)
 {
   TFile actsFile(actsFileName, "READ");
   TFile genfitFile(genfitFileName, "READ");

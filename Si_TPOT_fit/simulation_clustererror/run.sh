@@ -1,0 +1,13 @@
+condor_q -l 41.0 > log_41
+condor_q -l 42.0 > log_42
+condor_q -l 43.0 > log_43
+condor_q -l 44.0 > log_44
+condor_q -l 45.0 > log_45
+condor_q -l 46.0 > log_46
+condor_q -l 47.0 > log_47
+condor_q -l 48.0 > log_48
+condor_q -l 49.0 > log_49
+condor_q -l 50.0 > log_50
+condor_q -l 51.0 > log_51
+condor_q -l 52.0 > log_52
+condor_q -l 53.0 > log_53

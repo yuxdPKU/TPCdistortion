@@ -255,6 +255,9 @@ int Fun4All_G4_sPHENIX_reco(
   // BBC
   //Mbd_Reco();
 
+  // geantino synthetic ionization
+  GeantinoIonization();
+
   // cells
   Mvtx_Cells();
   Intt_Cells();
